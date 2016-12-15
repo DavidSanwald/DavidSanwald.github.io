@@ -199,7 +199,6 @@ namespace :site do
 
     # Configure git if this is run in Travis CI
     if ENV["TRAVIS"]
-      sh "git config -l"
       sh "git config --global user.name '#{ENV['GIT_NAME']}'"
       sh "git config --global user.email '#{ENV['GIT_EMAIL']}'"
       sh "git config --global push.default simple"
@@ -207,6 +206,7 @@ namespace :site do
 
     # Make sure destination folder exists as git repo
     check_destination
+    sh "git config -l"
     sh "git config --global user.name '#{ENV['GIT_NAME']}'"
     sh "git config --global user.email '#{ENV['GIT_EMAIL']}'"
     sh "git config --global push.default simple"
