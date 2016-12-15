@@ -1,0 +1,158 @@
+# SITE CONFIGURATION
+baseurl: "" # the subpath of your site, e.g. /blog/
+url: "https://davidsanwald.github.io" #"https://davidsanwald.github.io" # the base hostname & protocol for your site
+username: "DavidSanwald"
+repo: DavidSanwald.github.io
+branch: travis
+destination:  "_site"
+source: .
+
+# THEME-SPECIFIC CONFIGURATION
+theme_settings:
+  # Meta
+  title: random walks and lots of &#9829;s
+  avatar: avatar.png
+  gravatar: #Email MD5 hash
+  description: "&#9829;" # used by search engines
+
+  # Header and footer text
+  header_text: >
+     <p>If you are nice, some part of my &#9829; will also belong to you! </p>
+  header_text_feature_image:
+  footer_text:  >
+    &#9829; &#9829; &#9829;  to  <a href="https://rohanchandra.github.io/project/type/">Type Theme</a>
+
+  # Icons
+  rss: false
+  email_address: "why.ever.not.berlin@gmail.com"# Full email address, e.g. "sam@example.com"
+  behance:
+  bitbucket:
+  dribbble:
+  facebook:
+  flickr:
+  github: "DavidSanwald"
+  google_plus:
+  instagram:
+  linkedin:  # Full URL
+  pinterest:
+  reddit:
+  soundcloud:
+  stack_exchange:  # Full URL
+  steam:
+  tumblr:
+  twitter: "DavidSanwald"
+  wordpress:
+  youtube:
+
+  # Scripts
+  google_analytics: # Tracking ID, e.g. "UA-000000-01"
+  disqus_shortname: "random-walks"
+  muut_community_name: # From muut.com settings, e.g. "muttcommunityname"
+  katex: true # Enable if using math markup
+
+  # Localization strings
+  str_follow_on: "Follow on"
+  str_rss_follow: "Follow RSS feed"
+  str_email: "Email"
+  str_next: "Next"
+  str_prev: "Prev"
+  str_continue_reading: "Continue reading"
+
+  # Colours, typography and padding
+  # Open the "_sass > base" folder, and open "_variables.scss"
+  google_fonts: "Source+Sans+Pro:400,700,700italic,400italic"
+
+  # Post navigation
+  post_navigation: false
+  excerpt_separator: <!--more-->
+
+# PAGINATION
+paginate: 5
+paginate_path: "blog/page:num"
+
+# BUILD SETTINGS
+markdown: kramdown
+highlighter: rouge
+math_engine: mathjax
+sass:
+  sass_dir: _sass
+  style: :compressed
+gems: [jekyll-paginate, jekyll-seo-tag, jekyll/scholar]
+exclude: [vendor]
+
+
+picture:
+  source: assets/images/_fullsize
+  output: img
+  markup: picture
+  presets:
+    # Full width pictures
+    default:
+      ppi: [1, 1.5]
+      attr:
+        class: blog-full
+        itemprop: image
+      source_lrg:
+        media: "(min-width: 40em)"
+        width: 700
+      source_med:
+        media: "(min-width: 30em)"
+        width: 450
+      source_default:
+        width: 350
+        height: 200
+    # Half width pictures
+    half:
+      ppi: [1, 1.5]
+      attr:
+        data-location: "{{location}}"
+        data-active: nil
+      source_lrg:
+        media: "(min-width: 40em)"
+        width: 400
+      source_med:
+        media: "(min-width: 30em)"
+        width: 250
+      source_default:
+        width: 350
+    # Self-set resolution sources. Useful if you don't want a 1:1 image size to dppx ratio.
+    gallery:
+      source_wide_hi:
+        media: "(min-width: 40em) and (min-resolution: 1.5dppx)"
+        width: 900
+        height: 600
+      source_wide:
+        media: "(min-width: 40em)"
+        width: 600
+        height: 400
+      source_default:
+        width: 250
+        height: 250
+
+scholar:
+  style: apa
+  locale: en
+
+  sort_by: none
+  order: ascending
+
+  group_by: none
+  group_order: ascending
+
+  source: /_bibliography
+  bibliography: references.bib
+  bibliography_template: "{{reference}}"
+
+  replace_strings: true
+  join_strings:    true
+
+  use_raw_bibtex_entry: true
+  bibtex_filters:
+  - superscript
+  - latex
+
+  details_dir:    bibliography
+  details_layout: bibtex.html
+  details_link:   Details
+
+  query: "@*"

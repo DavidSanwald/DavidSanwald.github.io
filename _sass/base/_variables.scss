@@ -1,0 +1,30 @@
+// Typography
+$font-family-main:  'Fira Sans' , 'Source Sans Pro', Helvetica, Arial, sans-serif;
+$font-family-headings: 'Fira Sans' , 'Source Sans Pro', Helvetica, Arial, sans-serif;
+$font-size: 1.25em;
+
+// Padding
+$padding-large: 20%;
+$padding-small: 5%;
+$padding-x-small: 3%;
+
+// Brand colours
+$brand-color: #e8c95d;
+$background-color: #fff;
+$border-color: rgba(0, 0, 0, 0.1); // rgba recommended if using feature images
+
+// Typography colours
+$text-color: #433447;
+$link-color: #d16b54;
+$selection-color: #d16b54; // visible when highlighting text
+
+// Header colours
+$header-link-color: #433447;
+
+// Feature image for articles
+$feature-image-text-color: #fff;
+$feature-image-size: cover; // options include "cover", "contain", "auto"
+
+// Header description box
+$header-desc-background-color: #d16b54;
+$header-desc-text-color: #fff;

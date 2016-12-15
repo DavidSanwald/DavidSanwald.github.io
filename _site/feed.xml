@@ -1,0 +1,688 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title></title>
+    <atom:link href="https://davidsanwald.github.io/feed.xml" rel="self" type="application/rss+xml"/>
+    <link>https://davidsanwald.github.io/</link>
+    <description></description>
+    <pubDate>Thu, 15 Dec 2016 17:22:11 +0100</pubDate>
+    
+      <item>
+        <title>Defeating the Deadly Triad&amp;#58;</title>
+        <link>https://davidsanwald.github.io/2016/12/11/Double-DQN-interfacing-OpenAi-Gym.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/12/11/Double-DQN-interfacing-OpenAi-Gym.html</guid>
+        <description>&lt;iframe width=&quot;1120&quot; height=&quot;630&quot; src=&quot;https://www.youtube.com/embed/I7oPYEeSVfc&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+&lt;!--more--&gt;
+
+&lt;p&gt;We’re going to give birth to a deep neural learning agent. OpenAI’s Gym is awesome, it’s the first Gym where I’m sure nobody will ask me like “Do you even lift bro?” (;
+So I even uploaded the agent, even though this is about sharing (which also helps me to learn) and not about competition.&lt;/p&gt;
+
+&lt;p&gt;The agent isn’t optimized for performance although it needs 51 steps, to solve the cart pole environment. If you want to, you can look at some stats and the evaluated performance here:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://gym.openai.com/evaluations/eval_GFtDBmuyRjCzcAkBibwYWQ&quot;&gt;https://gym.openai.com/evaluations/eval_GFtDBmuyRjCzcAkBibwYWQ&lt;/a&gt;&lt;/p&gt;
+
+&lt;iframe width=&quot;1120&quot; height=&quot;630&quot; src=&quot;https://www.youtube.com/embed/Ih8EfvOzBOY&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+
+&lt;p&gt;If you haven’t heard about Deepmind’s Atari playing AI, which even earned them a Nature cover &lt;a href=&quot;#mnih2015human&quot;&gt;(Mnih et al., 2015)&lt;/a&gt;, I strongly recommend starting with the video above, so you know what the hype’s all about. It’s a an easy, very entertaining 3 minute watch explaining why some people get so excited about the current advancements in reinforcement learning:&lt;/p&gt;
+
+&lt;p&gt;Recently Google’s AI think tank Deepmind revolutionized reinforcement learning by introducing Deep Q-Networks (DQN). DQN is a set of techniques which made it for the first time possible to really stabilize off-policy learning methods in conjunction with function approximation (especially by deep neural networks).&lt;/p&gt;
+
+&lt;p&gt;Reinforcement learning is a lot of fun and understanding the DQN algorithm is much easier than one might think. But sometimes getting from the math in a paper to an actual implementation still can be tricky.
+So I thought it could be helpful to share an easy implementation. I took some code of mine, stripped it down, removed all unnecessary clutter and used Keras to implement the networks to make it as easy as possible to understand the underlying algorithm.&lt;/p&gt;
+
+&lt;p&gt;Furthermore what Elon Musk’s no profit think tank &lt;a href=&quot;https://openai.com/blog/&quot;&gt;OpenAI&lt;/a&gt; created  with their &lt;a href=&quot;https://gym.openai.com/&quot;&gt;Gym&lt;/a&gt;, a framework unifying the use of learning environments for AI agents, is the most addicting playground ever. The unified interface provided by Gym makes developing, testing and comparing learning algorithms so much easier and improves reproducibility to a great extend.
+So I hope I can also help by demonstrating how easy it is to interface with a Gym environment.
+The example we use is the cartpole task, a classic benchmark for control. Because the state representation is low dimensional, it’s no problem at all to train an agent even on a single CPU.&lt;/p&gt;
+
+&lt;p&gt;I extended DQN to double DQN because adding Hado van Hasselt’s Double-Q-Learning &lt;a href=&quot;#hasselt2010double&quot;&gt;(Hasselt, 2010)&lt;/a&gt; to DQN helps to helps to stabilize the learning process even further and isn’t hardly any more difficult to implement &lt;a href=&quot;#van2015deep&quot;&gt;(Van Hasselt, Guez, &amp;amp; Silver, 2015)&lt;/a&gt;.&lt;/p&gt;
+
+&lt;p&gt;It might helpful to know the basics of RL. If you want to get started or need a refresher I recommend the following resources:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;David Silver’s amazing &lt;a href=&quot;http://www0.cs.ucl.ac.uk/staff/d.silver/web/Teaching.html&quot;&gt;lectures&lt;/a&gt; on RL at UCL.&lt;/li&gt;
+  &lt;li&gt;Sutton and Barto’s classic book about the topic &lt;a href=&quot;#sutton1998reinforcement&quot;&gt;(Sutton &amp;amp; Barto, 1998)&lt;/a&gt; or even better the latest (free) &lt;a href=&quot;https://webdocs.cs.ualberta.ca/~sutton/book/the-book-2nd.html&quot;&gt;draft&lt;/a&gt; of the upcoming 2nd edition.&lt;/li&gt;
+  &lt;li&gt;Recently I began working on a code centric hands-on &lt;a href=&quot;https://davidsanwald.github.io/2016/09/12/RL-tutorial.html&quot;&gt;notebook&lt;/a&gt; explaining and visualizing tabular Q-learning. If you want to look into it or even give me some feedback, helping me to further improve it, this would be awesome:&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h1 id=&quot;function-approximation-and-reinforcement-learning&quot;&gt;Function approximation and Reinforcement Learning:&lt;/h1&gt;
+
+&lt;h2 id=&quot;avoiding-getting-killed-by-blue-cars-and-bowling-balls&quot;&gt;Avoiding Getting Killed by Blue Cars and Bowling Balls&lt;/h2&gt;
+
+&lt;p&gt;For a long time most of reinforcement learning research took place on model problems with small discrete state spaces:
+&lt;img src=&quot;/img/cliff_map.png&quot; alt=&quot;Plot of Cliffworld a gridworld developed by Stutton and Barto&quot; /&gt;
+These gridworlds are still a valuable tool for analyzing and understanding the properties of different algorithms. But one reason for the lack of success of RL outside such gridworlds was also what Richard Sutton calls the deadly triad.&lt;/p&gt;
+
+&lt;p&gt;Let’s look at the backup function for Q-learning:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;Q(s,a)\gets Q(s,a)+\alpha[r+\gamma \max_{a}Q(s&#39;,a)-Q(s,a)]&lt;/script&gt;
+
+&lt;p&gt;The Q-function maps state-action pairs to a scalar value. For a small gridworld with &lt;script type=&quot;math/tex&quot;&gt;4 \times 12&lt;/script&gt; available states and 4 possible actions there are &lt;script type=&quot;math/tex&quot;&gt;4 \times 12 \times 4 = 512&lt;/script&gt;  Q-value estimates needed to represent the Q-function.
+ It’s easy to see, that the number of estimates will grow quickly for larger state and action spaces and that the simple tabular representation wouldn’t work at all for continuous state spaces.
+ Moreover convergence to the true Q-values is only guaranteed if each state-action pair is visited a infinite number of times &lt;a href=&quot;#watkins1992q&quot;&gt;(Watkins &amp;amp; Dayan, 1992)&lt;/a&gt;, so learning the Q-function of large state-action spaces is virtually impossible.&lt;/p&gt;
+
+&lt;p&gt;It’s easy to understand that this is a problem of almost all learning. If we get hit by a red car, why will we (hopefully) jump to the side the next time a car approaches us at high velocity even if it’s a blue car this time? And what about deciding whether to catch a spherical object or not? If we successfully caught a basketball, why won’t most people try the same thing with a bowling ball?&lt;/p&gt;
+
+&lt;p&gt;Because we never experience the exact same situation twice, we have to &lt;em&gt;generalize&lt;/em&gt; from multiple past experiences to  successfully evaluate new situations.&lt;/p&gt;
+
+&lt;h2 id=&quot;running-into-the-deadly-triad&quot;&gt;Running Into the Deadly Triad&lt;/h2&gt;
+
+&lt;p&gt;The proven ability (imposing only some mild conditions) of neural networks to approximate arbitrary continuous functions  by superposition the activation functions of its neurons &lt;a href=&quot;#csaji2001approximation&quot;&gt;(Csáji, 2001)&lt;/a&gt; makes it only a natural choice to use them to represent the Q-function.
+So the approximate Q-function&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;Q(s,a) \approx Q(s,a, \mathbf{w})&lt;/script&gt;
+
+&lt;p&gt;is now parameterized by the weights &lt;script type=&quot;math/tex&quot;&gt;\mathbf{w}&lt;/script&gt; of the neural network.
+But this naive approach will be highly unstable. Why’s that so? We’re encountering what Sutton calls the &lt;em&gt;deadly triad&lt;/em&gt;:&lt;/p&gt;
+
+&lt;p&gt;Learning combining the following three conditions is always most likely to diverge:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;off-policy learning, like it’s the case with Q-learning due to the $max$ operator in the Bellman update&lt;/li&gt;
+  &lt;li&gt;scalable function approximation&lt;/li&gt;
+  &lt;li&gt;bootstrapping, meaning estimating estimates from estimates, which is the main principle of &lt;em&gt;Temporal-Difference&lt;/em&gt; learning methods&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Even linear function approximation in seemingly very simple environments can lead to instable, diverging Q-functions. I strongly recommend taking a look at &lt;em&gt;Baird’s counterexample&lt;/em&gt; &lt;a href=&quot;#baird1995residual&quot;&gt;(Baird &amp;amp; others, 1995)&lt;/a&gt;. Leemond Baird constructed an example using the simplest MDP one could think of, where linear function approximation still needs to divergence of the Q-function.&lt;/p&gt;
+
+&lt;h2 id=&quot;dqn-to-the-rescue&quot;&gt;DQN to the Rescue&lt;/h2&gt;
+
+&lt;p&gt;Until the development of DQN it has impossible to stabilize learning under the conditions of the &lt;em&gt;deadly triad&lt;/em&gt;.
+DQN provides a set of three methods to stabilize the learning process. The first one which is clipping the rewards to a fixed range, is pretty straight forward.&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Clipping the TD-error to a fixed interval of &lt;script type=&quot;math/tex&quot;&gt;[-1, 1]&lt;/script&gt;&lt;/li&gt;
+  &lt;li&gt;Experience replay&lt;/li&gt;
+  &lt;li&gt;Replacing one single network by the use of two separate networks, one online network and one target network&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;The first one is pretty straight forward. So let’s talk about experience replay and the target network.&lt;/p&gt;
+
+&lt;h3 id=&quot;experience-replay-or-flashbacks&quot;&gt;Experience Replay or Flashbacks&lt;/h3&gt;
+&lt;p&gt;Neural networks have been successfully used for &lt;em&gt;supervised learning&lt;/em&gt; for years. So the main idea behind DQN is to find a way of brining training of the network in RL closer to the supervised setting.
+Experiences consisting of the tuple  &lt;script type=&quot;math/tex&quot;&gt;(s, a, s&#39;, r)&lt;/script&gt;, state, action, nextstate, reward, are not directly used to update the Q-function. Instead they are stored in a replay memory of fixed size. The Q-function now is updated by sampling a random batch of memory tuples at each timestep from this memory. This has several advantages:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Now it is possible to use Mini-batch gradient descent to optimize the loss of the network, which reduces variance.&lt;/li&gt;
+  &lt;li&gt;At each timestep it is now possible to learn from multiple samples not just from the recent transition.&lt;/li&gt;
+  &lt;li&gt;Learning implies the assumption of the samples being &lt;em&gt;i.i.d&lt;/em&gt;. Because the samples are generated by a sequence of subsequent steps by the agent, they violate this assumption. Decoupling generating samples from learning samples by using the memory as a proxy brings the distribution of samples used for learning closer to the  &lt;em&gt;i.i.d&lt;/em&gt; assumption.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Couldn’t resist to call this &lt;strong&gt;Flashback&lt;/strong&gt;, it sounds so much cooler. Sorry (:&lt;/p&gt;
+
+&lt;h3 id=&quot;using-a-fixed-target-network&quot;&gt;Using a fixed target network&lt;/h3&gt;
+
+&lt;p&gt;Let’s look at the backup for the Q-function again:&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;Q(s,a)\gets Q(s,a)+\alpha[r+\gamma \max_{a}Q(s&#39;,a)-Q(s,a)]&lt;/script&gt;
+
+&lt;p&gt;Using a neural network, both the targets given by &lt;script type=&quot;math/tex&quot;&gt;\gamma \max_{a}Q(s&#39;,a, \mathbf{w})&lt;/script&gt; as well as the updated values &lt;script type=&quot;math/tex&quot;&gt;Q(s,a,\mathbf{w})&lt;/script&gt; depend on the weights &lt;script type=&quot;math/tex&quot;&gt;\mathbf{w}&lt;/script&gt; of the neural network.
+So a weight update that increases
+&lt;script type=&quot;math/tex&quot;&gt;Q(s,a,\mathbf{w})&lt;/script&gt;
+potentially also increases
+&lt;script type=&quot;math/tex&quot;&gt;\gamma \max_{a}Q(s&#39;,a, \mathbf{w})&lt;/script&gt;
+which could result in feedback.
+To address this issue two separate networks are used. The online network parametrized by &lt;script type=&quot;math/tex&quot;&gt;\mathbf{w^⁻}&lt;/script&gt; is used to generate the Q-values for epsilon greedy action selection.
+To compute the targets
+&lt;script type=&quot;math/tex&quot;&gt;Y_{DQN}=\gamma \max_{a}Q(s&#39;,a, \mathbf{w^⁻})&lt;/script&gt;
+a second network, the target network parametrized by &lt;script type=&quot;math/tex&quot;&gt;\mathbf{w^⁻}&lt;/script&gt; is used. At each timestep the weights of the online network are updated by optimizing the MSE loss function&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;\mathcal{L}(w) = \mathbb{E}_{s,a,r,s&#39;\sim \mathcal{D}}[(r+\gamma\max_{a}Q(s&#39;,a,\mathbf{w^{-}})-Q(s,a,\mathbf{w}))^{2}]&lt;/script&gt;
+
+&lt;p&gt;via mini-batch gradient descent.
+The weights &lt;script type=&quot;math/tex&quot;&gt;\mathbf{w^⁻}&lt;/script&gt; of the target network are kept fixed and only periodically updated by copying the weights from the online network:
+&lt;script type=&quot;math/tex&quot;&gt;\mathbf{w^⁻}\gets \mathbf{w}&lt;/script&gt;
+This avoids destabilizing feedback loops in the update of the Q-function. Only after the weight updates DQN generated for a short time to  the simple Q-learning case because
+&lt;script type=&quot;math/tex&quot;&gt;\mathbf{w^⁻}=\mathbf{w}&lt;/script&gt;, it’s practically the same as using a single network.&lt;/p&gt;
+
+&lt;h3 id=&quot;tackling-value-overestimation-by-extending-dqn-to-double-dqn&quot;&gt;Tackling Value Overestimation by Extending DQN to Double DQN&lt;/h3&gt;
+
+&lt;p&gt;To be honest, the cart-pole example we’re using here, won’t benefit much from extending DQN to Double DQN. This is due to the fact that overestimation bias increases with the number of possible actions &lt;a href=&quot;#van2015deep&quot;&gt;(Van Hasselt, Guez, &amp;amp; Silver, 2015)&lt;/a&gt; and the classic cart-pole domain is a bang bang control problem (just discrete actions, “on or off”) with only 2 available actions.
+Nevertheless the code will way more stable in other environments. Because RL is general and not problem specific, you can use the same code for a wide variety of problems and when a convolution layer is added and the parameters are tuned it performs well on raw pixels. The benefits of Double DQN will also increase, when confronted with noisy environments and especially noisy reward signals.
+So adding double DQN right away is worth it.
+While the recent paper  &lt;a href=&quot;#van2015deep&quot;&gt;(Van Hasselt, Guez, &amp;amp; Silver, 2015)&lt;/a&gt; about double DQN is accessible if one invests a little time, the original paper  by Hado van Hasselt  introducing Double-Q-Learning is a really challenging read &lt;a href=&quot;#hasselt2010double&quot;&gt;(Hasselt, 2010)&lt;/a&gt;.
+I try to provide some intuition here but if you really want to get into the mathematics behind the overestimation bias I recommend the following steps:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Begin with Jensen’s Inequality. &lt;a href=&quot;https://youtu.be/HfCb1K4Nr8M&quot;&gt;This&lt;/a&gt; video is a great starting point before looking at the proofs.&lt;/li&gt;
+  &lt;li&gt;Read the passage on Double-Q-Learning in the draft version of Sutton and Barto’s book.&lt;/li&gt;
+  &lt;li&gt;Read the Double DQN paper &lt;a href=&quot;#van2015deep&quot;&gt;(Van Hasselt, Guez, &amp;amp; Silver, 2015)&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;Finally read Thrun and Schwartz’ paper about function approximation and overestimation biases in RL &lt;a href=&quot;#thrun1993issues&quot;&gt;(Thrun &amp;amp; Schwartz, 1993)&lt;/a&gt; and Hado van Hasselt’s original paper introducing Double Q-learning.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Basically Q-learning uses &lt;script type=&quot;math/tex&quot;&gt;\mathbb{E}[\max_{a}Q(s&#39;,a)]&lt;/script&gt; to approximate  &lt;script type=&quot;math/tex&quot;&gt;\max_{a}\mathbb{E}[Q(s&#39;,a)]&lt;/script&gt;, which is always less or equal.
+Using the max over all Q-values, we always select the one, with the highest probability of overestimation (when there’s noise or function approximation). It’s easy to understand that expectation of these estimates now has an upwards bias.&lt;/p&gt;
+
+&lt;p&gt;Double DQN decomposes the max operation for the target values into action selection and action evaluation. The targets are now&lt;/p&gt;
+
+&lt;script type=&quot;math/tex; mode=display&quot;&gt;Y_{DDQN}=r+\gamma Q(s&#39;, \mathop{\arg\,\max}\limits_a Q(s&#39;,a,\mathbf{w}), \mathbf{w^⁻})&lt;/script&gt;
+
+&lt;p&gt;so the argmax of the Q-values of the online network for a particular state maps this state to an action, now the target network’s Q-value is a function of this state and the action selected by the online network.&lt;/p&gt;
+
+&lt;h1 id=&quot;shut-up-and-show-me-the-code&quot;&gt;Shut up and show me the code!&lt;/h1&gt;
+
+&lt;p&gt;I sacrificed some DRYness and extendability of the code, to make the underlying algorithm as understandable as possible. To keep it simple I also sinned and used global variables for configuration to avoid bloated commandline parsing.
+If something isn’t clear, feel free to ask my anytime. Here I want to explain the parts I consider most important.&lt;/p&gt;
+
+&lt;p&gt;The whole code is consists of the following parts:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Experiment&lt;/code&gt;: Wrapper around the Gym environment. Also containing the control flow for conducting the whole training as well as the agent-environment loop.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Agent&lt;/code&gt;: Learning agent, containing the learning logic as well as an instance of &lt;code class=&quot;highlighter-rouge&quot;&gt;NN&lt;/code&gt; and the &lt;code class=&quot;highlighter-rouge&quot;&gt;ReplayMemory&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;NN&lt;/code&gt;: Wrapping the online network &lt;code class=&quot;highlighter-rouge&quot;&gt;model&lt;/code&gt; as well as the target network &lt;code class=&quot;highlighter-rouge&quot;&gt;model_t&lt;/code&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;ReplayMemory&lt;/code&gt;: Storing the experience tuples and providing randomly sampled experience batches&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;EpsilonUpdater&lt;/code&gt;: Leftover from my own code. Using the observer pattern, to control greediness of action selection. Kept it, because it makes it simple to extend for adaptive control of other parameters like the learning rate or target network update frequency.&lt;/li&gt;
+  &lt;li&gt;&lt;code class=&quot;highlighter-rouge&quot;&gt;Utils&lt;/code&gt; Just some functions for reshaping numpy arrays&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;I wrapped the Gym environment in an experiment object which holds the agent-environment loop and all runtime logic for training.&lt;/p&gt;
+
+&lt;h3 id=&quot;experiment&quot;&gt;Experiment&lt;/h3&gt;
+
+&lt;p&gt;The main part is the &lt;code class=&quot;highlighter-rouge&quot;&gt;run_episode&lt;/code&gt; method, which also contains the agent-environment loop.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;run_episode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;reward&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;reset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;done&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;False&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;not&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;done&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;render&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;act&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;s_&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;done&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;step&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;learn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s_&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;done&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;reward&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s_&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The interface of a Gym environment is very simple and consists of just 3 methods:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt; &lt;span class=&quot;n&quot;&gt;reset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# resets environment and returns the start state&lt;/span&gt;
+ &lt;span class=&quot;n&quot;&gt;step&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# takes action, returns newstate, reward and true of false for being terminal&lt;/span&gt;
+ &lt;span class=&quot;n&quot;&gt;render&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# renders environment&lt;/span&gt;
+
+ &lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h3 id=&quot;agent&quot;&gt;Agent&lt;/h3&gt;
+
+&lt;p&gt;Exposes just two methods to interface with the experiment. I tried to resemble the classic agent-environment interface as close as possible.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;n&quot;&gt;act&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# takes state, returns action&lt;/span&gt;
+&lt;span class=&quot;n&quot;&gt;learn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt; &lt;span class=&quot;c&quot;&gt;# takes state, action, newstate, reward, done bool and computes back ops&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;_make_batch()&lt;/code&gt; method queries the &lt;code class=&quot;highlighter-rouge&quot;&gt;ReplayMemory()&lt;/code&gt; for a batch of random samples.
+It also computes the targets, so it holds all the relevant ingredients for DQN and double DQN.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;run_episode&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;reward&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;mi&quot;&gt;0&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;reset&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;done&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;False&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;while&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;not&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;done&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;render&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;act&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;s_&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;done&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;_&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;env&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;step&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;learn&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;((&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;s&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;a&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s_&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;done&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;reward&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;r&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;s&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;s_&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h3 id=&quot;nn&quot;&gt;NN&lt;/h3&gt;
+
+&lt;p&gt;The brain of the agent. I used &lt;script type=&quot;math/tex&quot;&gt;\tanh&lt;/script&gt; as activation function because I think that rectified linear units (ReLU) don’t add
+any value for such small networks and low dimensional inputs. Furthermore we need some sort of gradient clipping, if we use ReLUs,
+because even smaller learning rates can lead to dying ReLUs.
+If you want to learn from pixels, you have to change just a few things:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;Add 2 or 3 convolution layers&lt;/li&gt;
+  &lt;li&gt;Increase general network size and add regularization (start with dropout, if needed try L2-norm weight regularization next)&lt;/li&gt;
+  &lt;li&gt;Tweak the learning rate, now you also could benefit from switching to ReLU activation functions&lt;/li&gt;
+  &lt;li&gt;Add some gradient clipping, don’t be so hard on the poor ReLUs &amp;lt;3&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;Optimization wise we use simple stochastic gradient descent. I think it’s a good baseline.
+The input doesn’t contain any spacial structure, where we could profit from convolution, so we just use simple fully connected layer.
+In my experience really small and and shallow networks perform best on such small problems. For higher dimensional inputs, especially for learning from raw pixel input or something like that, I recommend to be quite generous with layer size and use regularization to deal with overfitting.&lt;/p&gt;
+
+&lt;p&gt;I left this check if the loss is &lt;code class=&quot;highlighter-rouge&quot;&gt;NaN&lt;/code&gt; in the code. If using ReLUs you should notice if the die and you have to start over (:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;flashback&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;_make_batch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+    &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loss&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;NN&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;train&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;X&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;y&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;np&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;isnan&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loss&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;history&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;[&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;loss&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;])&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;any&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;():&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;print&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;s&quot;&gt;&#39;Warning, loss is {}&#39;&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;format&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;loss&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;pass&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Of course this is the very least. I didn’t want to clutter the code with all the bookkeeping stuff but if you don’t want to be blind, you wanna also compute the max Q-values, the loss and the values of the weights over time. You can’t have too many plots. Ever! (:&lt;/p&gt;
+
+&lt;h3 id=&quot;replaymemory&quot;&gt;ReplayMemory&lt;/h3&gt;
+
+&lt;p&gt;I used a double-ended queue to implement the maximum memory capacity. If the memory is queried for a batch and the batch size exceeds the current number of stored samples in the memory the memory returns the maximum number of samples available.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;ReplayMemory&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;__init__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;capacity&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;samples&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;deque&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;([],&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;maxlen&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;capacity&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;store&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;samples&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;append&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;exp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;pass&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;get_batch&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;n_samples&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;min&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;n&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;nb&quot;&gt;len&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;samples&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;samples&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;sample&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;samples&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;n_samples&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;return&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;samples&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This works nice but if we want to implement prioritized replay, we need to use a Tree structure, so we’re able to achieve &lt;script type=&quot;math/tex&quot;&gt;\mathcal{O}(n\log{}n)&lt;/script&gt; search complexity (best case).
+But for now we’re happy with our simple deque (:&lt;/p&gt;
+
+&lt;h3 id=&quot;epsilonupdater&quot;&gt;EpsilonUpdater&lt;/h3&gt;
+
+&lt;p&gt;The &lt;code class=&quot;highlighter-rouge&quot;&gt;EpsilonUpdater&lt;/code&gt; uses a push-oriented observer pattern. It’s easy to add more observers, to control additional parameters like the learning rate or update frequency at runtime. You can also add more events.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;class&lt;/span&gt; &lt;span class=&quot;nc&quot;&gt;EpsilonUpdater&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;__init__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;__call__&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;event&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;==&lt;/span&gt; &lt;span class=&quot;s&quot;&gt;&#39;step_done&#39;&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+            &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;epsilon_update&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+            &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;switch_learning&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;()&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;else&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+            &lt;span class=&quot;k&quot;&gt;pass&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;epsilon_update&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;epsilon&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+            &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;epsilon_min&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;+&lt;/span&gt;
+            &lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;epsilon_max&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;epsilon_min&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;exp&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;
+                &lt;span class=&quot;o&quot;&gt;-&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;epsilon_decay&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;*&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;step_count_total&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;))&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;pass&lt;/span&gt;
+
+    &lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;switch_learning&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;if&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;step_count_total&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;&amp;gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;learning_start&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+            &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;agent&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;learning_switch&lt;/span&gt; &lt;span class=&quot;o&quot;&gt;=&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;True&lt;/span&gt;
+        &lt;span class=&quot;k&quot;&gt;pass&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The observer are attached via the agent’s &lt;code class=&quot;highlighter-rouge&quot;&gt;add_observer()&lt;/code&gt; method:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;add_observer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;observer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;observers&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;append&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;observer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;pass&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The agent can push events to the observers by calling them using their magic
+&lt;code class=&quot;highlighter-rouge&quot;&gt;__call__&lt;/code&gt; method, which takes a simple string as identification for different events.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-python&quot; data-lang=&quot;python&quot;&gt;&lt;span class=&quot;k&quot;&gt;def&lt;/span&gt; &lt;span class=&quot;nf&quot;&gt;notify&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;,&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;):&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;for&lt;/span&gt; &lt;span class=&quot;n&quot;&gt;observer&lt;/span&gt; &lt;span class=&quot;ow&quot;&gt;in&lt;/span&gt; &lt;span class=&quot;bp&quot;&gt;self&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;.&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;observers&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;:&lt;/span&gt;
+        &lt;span class=&quot;n&quot;&gt;observer&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;(&lt;/span&gt;&lt;span class=&quot;n&quot;&gt;event&lt;/span&gt;&lt;span class=&quot;p&quot;&gt;)&lt;/span&gt;
+    &lt;span class=&quot;k&quot;&gt;pass&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;h2 id=&quot;poledancing&quot;&gt;Poledancing&lt;/h2&gt;
+
+&lt;p&gt;Here’s some video of our beauty:&lt;/p&gt;
+
+&lt;iframe width=&quot;1120&quot; height=&quot;630&quot; src=&quot;https://www.youtube.com/embed/I7oPYEeSVfc&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+
+&lt;p&gt;Some performance stats can be found here:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://gym.openai.com/evaluations/eval_GFtDBmuyRjCzcAkBibwYWQ&quot;&gt;https://gym.openai.com/evaluations/eval_GFtDBmuyRjCzcAkBibwYWQ&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;The code can be found here:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/DavidSanwald/DDQN&quot;&gt;https://github.com/DavidSanwald/DDQN&lt;/a&gt;&lt;/p&gt;
+
+&lt;h2 id=&quot;last-words&quot;&gt;Last words&lt;/h2&gt;
+
+&lt;p&gt;I’m happy if this helps someone or I could even share some of the joy I take in such things.
+If I can help you in anyway or of something isn’t clear, just contact me.
+Also drop me a note if you want to start some project or just want to talk.&lt;/p&gt;
+
+&lt;ol class=&quot;bibliography&quot;&gt;&lt;li&gt;&lt;span id=&quot;mnih2015human&quot;&gt;Mnih, V., Kavukcuoglu, K., Silver, D., Rusu, A. A., Veness, J., Bellemare, M. G., … others. (2015). Human-level control through deep reinforcement learning. &lt;i&gt;Nature&lt;/i&gt;, &lt;i&gt;518&lt;/i&gt;(7540), 529–533.&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;hasselt2010double&quot;&gt;Hasselt, H. V. (2010). Double Q-learning. In &lt;i&gt;Advances in Neural Information Processing Systems&lt;/i&gt; (pp. 2613–2621).&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;van2015deep&quot;&gt;Van Hasselt, H., Guez, A., &amp;amp; Silver, D. (2015). Deep reinforcement learning with double Q-learning. &lt;i&gt;CoRR, Abs/1509.06461&lt;/i&gt;.&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;sutton1998reinforcement&quot;&gt;Sutton, R. S., &amp;amp; Barto, A. G. (1998). &lt;i&gt;Reinforcement learning: An introduction&lt;/i&gt; (Vol. 1). MIT press Cambridge.&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;watkins1992q&quot;&gt;Watkins, C. J. C. H., &amp;amp; Dayan, P. (1992). Q-learning. &lt;i&gt;Machine Learning&lt;/i&gt;, &lt;i&gt;8&lt;/i&gt;(3-4), 279–292.&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;csaji2001approximation&quot;&gt;Csáji, B. C. (2001). Approximation with artificial neural networks. &lt;i&gt;Faculty of Sciences, Etvs Lornd University, Hungary&lt;/i&gt;, &lt;i&gt;24&lt;/i&gt;, 48.&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;baird1995residual&quot;&gt;Baird, L., &amp;amp; others. (1995). Residual algorithms: Reinforcement learning with function approximation. In &lt;i&gt;Proceedings of the twelfth international conference on machine learning&lt;/i&gt; (pp. 30–37).&lt;/span&gt;&lt;/li&gt;
+&lt;li&gt;&lt;span id=&quot;thrun1993issues&quot;&gt;Thrun, S., &amp;amp; Schwartz, A. (1993). Issues in using function approximation for reinforcement learning. In &lt;i&gt;Proceedings of the 1993 Connectionist Models Summer School Hillsdale, NJ. Lawrence Erlbaum&lt;/i&gt;.&lt;/span&gt;&lt;/li&gt;&lt;/ol&gt;
+</description>
+        <pubDate>Sun, 11 Dec 2016 00:00:00 +0100</pubDate>
+      </item>
+    
+      <item>
+        <title>About Zsh and Other Awesome Shells</title>
+        <link>https://davidsanwald.github.io/2016/11/13/more-awesome-shells.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/11/13/more-awesome-shells.html</guid>
+        <description>&lt;iframe width=&quot;1120&quot; height=&quot;630&quot; src=&quot;https://www.youtube.com/embed/XDp5Rby5IQA&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+&lt;!--more--&gt;
+
+&lt;iframe width=&quot;1120&quot; height=&quot;630&quot; src=&quot;https://www.youtube.com/embed/XDp5Rby5IQA&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+
+&lt;p&gt;My dear friend &lt;a href=&quot;http://alexandra-reichart.com/&quot;&gt;Alexandra&lt;/a&gt; plays in a new &lt;a href=&quot;https://www.facebook.com/dieLeckmuscheln/&quot;&gt;band&lt;/a&gt; and I instantly fell in love with it as it is the case with nearly everything she creates or co-creates.&lt;/p&gt;
+
+&lt;p&gt;So I just had to share it. Think this band could be my &lt;a href=&quot;https://github.com/robbyrussell/oh-my-zsh&quot;&gt;oh-my-zsh&lt;/a&gt; of Dada-Pop.
+Something I instantly fell in love with because it just feels good and makes life easier. In some way it’s exactly as oh-my-zsh &amp;lt;3&lt;/p&gt;
+</description>
+        <pubDate>Sun, 13 Nov 2016 00:00:00 +0100</pubDate>
+      </item>
+    
+      <item>
+        <title>Getting CUDA 8 to Work With openAI Gym on AWS and Compiling Tensorflow for CUDA 8 Compatibility</title>
+        <link>https://davidsanwald.github.io/2016/11/13/building-tensorflow-with-gpu-support.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/11/13/building-tensorflow-with-gpu-support.html</guid>
+        <description>&lt;p&gt;The necessary steps to get CUDA and cuDNN to work with an virtual framebuffer like xvfb, so that you can use openAI Gym. Also included how to compile Tensorflow using Google’s Bazel.
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;p&gt;I had some hard time getting Tensorflow with GPU support and &lt;a href=&quot;https://gym.openai.com/&quot;&gt;OpenAI Gym&lt;/a&gt; at the same time working on an AWS EC2 instance. For some time I used &lt;a href=&quot;https://github.com/NVIDIA/nvidia-docker/&quot;&gt;NVIDIA-Docker&lt;/a&gt; for this but as much as I love Docker, depending on special access to the (NVIDIA) GPU drivers, took away some of the biggest advantages when using Docker, at least for my use cases. Running OpenAI Gym in a normal container, exposing some port to the outside and running agents/neural nets etc. elsewhere seems like a really promising approach and I’m looking forward to it being ready.&lt;/p&gt;
+
+&lt;p&gt;There are good &lt;a href=&quot;https://alliseesolutions.wordpress.com/2016/09/08/install-gpu-tensorflow-from-sources-w-ubuntu-16-04-and-cuda-8-0-rc/&quot;&gt;explanations&lt;/a&gt; on how to get Tensorflow with CUDA going, those were pretty helpful to me. However I suppose they were mostly concerned with supervised learning.
+If you want to run certain OpenAI Gym environments headless on a server, you have to provide an X-server to them, even when you don’t want to render a video. You can use a virtual framebuffer like xvfb for this, it works fine. But I never could getting it to work with GLX support. Also other solutions like X-Dummy failed.
+The problem is, that there’s no way to keep NVIDIA from installing OpenGl-libs, when using packages from some repo (which most of the tutorials do, because it’s way more convenient). Finally &lt;a href=&quot;https://github.com/openai/gym/issues/366#issuecomment-251967650&quot;&gt;this&lt;/a&gt; comment by pemami4911 in a github issue pointed me into the right direction. Since many people seem to run into the same problems, maybe the following will spare you some trouble.&lt;/p&gt;
+
+&lt;p&gt;I’m using Python 3 because it really annoys me, that everyone still uses Python 2.7 in the deep learning community. Also I’m using Ubuntu Ubuntu 16.04 LTS XENIAL XERUS because it’s released for ages (even the official Canonical AMI on AWS) and when spinning up a single new instance for computing just a few things, I don’t see why I would use Ubuntu 14.04, just because 16.04 is not among the three AMIs AWS offers to me first.
+But I think it should be no trouble to adapt this to other needs.&lt;/p&gt;
+
+&lt;p&gt;OT: &lt;em&gt;I also recommend using the AWS CLI together with the &lt;a href=&quot;https://github.com/robbyrussell/oh-my-zsh&quot;&gt;oh-my-zsh&lt;/a&gt; AWS plugin, because zsh and especially oh-my-zsh is awesome.&lt;/em&gt;&lt;/p&gt;
+
+&lt;p&gt;Okay, let’s begin:&lt;/p&gt;
+
+&lt;p&gt;Go to  &lt;a href=&quot;https://cloud-images.ubuntu.com/locator/ec2/&quot;&gt;https://cloud-images.ubuntu.com/locator/ec2/&lt;/a&gt; and look for the Ubuntu 16.04 LST XENIAL XERUS hvm:ebs-ssd	AMI from Canonical. For eu-central-1 it’s &lt;strong&gt;ami-8504fdea&lt;/strong&gt;.
+Spin up a new EC2 GPU instance (&lt;strong&gt;g2.2xlarge&lt;/strong&gt; will do) using that AMI (use a spot instance if you are as broke as me). I recommend using at least 20GB as root volume.
+SSH into your instance, username is &lt;strong&gt;ubuntu&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo apt-get update
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo apt-get -y dist-upgrade&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Let’s get some basics:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo apt-get install openjdk-8-jdk git python-dev python3-dev python-numpy python3-numpy build-essential python-pip python3-pip python3-venv swig python3-wheel libcurl3-dev&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;The Java stuff is for &lt;a href=&quot;https://bazel.build/&quot;&gt;Bazel&lt;/a&gt; Google’s build tool we will use later for compiling Tensorflow. We will use openJDK but if you have to, you can also use the proprietary one from Oracle.&lt;/p&gt;
+
+&lt;p&gt;Also  some kernel sources, compilers and other stuff:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo apt-get install -y gcc g++ gfortran  git linux-image-generic linux-headers-generic linux-source linux-image-extra-virtual libopenblas-dev&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;As we are on it, let’s install Bazel right now:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;echo&lt;/span&gt; &lt;span class=&quot;s2&quot;&gt;&quot;deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8&quot;&lt;/span&gt; | sudo tee /etc/apt/sources.list.d/bazel.list
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | sudo apt-key add -
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo apt-get update
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo apt-get install bazel
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo apt-get upgrade bazel&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now curl or wget the right NVIDIA driver. For the GRID K520 GPU &lt;strong&gt;367.57&lt;/strong&gt; should be the right choice (maybe Linus would it &lt;a href=&quot;https://www.youtube.com/watch?v=iYWzMvlj2RQ&quot;&gt;call&lt;/a&gt; the least wrong choice at most).&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;wget -P ~/Downloads/ http://us.download.nvidia.com/XFree86/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;NVIDIA will clash with the nouveau driver so deactivate it:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo nano /etc/modprobe.d/blacklist-nouveau.conf&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Insert the following lines and save:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;blacklist nouveau
+blacklist lbm-nouveau
+options nouveau &lt;span class=&quot;nv&quot;&gt;modeset&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;0
+&lt;span class=&quot;nb&quot;&gt;alias &lt;/span&gt;nouveau off
+&lt;span class=&quot;nb&quot;&gt;alias &lt;/span&gt;lbm-nouveau off&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Update the initframs (basically functionality to mount your real rootfs, which has been outsourced from the kernel) and reboot:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo update-initramfs -u
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo reboot&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Make the NVIDIA driver runfile executable and install the driver and reboot one more time, just to be sure.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;IMPORTANT: In my experience xvfb will only work if you use the –no-opengl-files option!&lt;/strong&gt;&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;chmod +x ~/Downloads/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo sh ~/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run --no-opengl-files
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo reboot&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now wget CUDA 8.0. toolkid from NVIDIA&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;h
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;wget https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_linux-run&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;While downloading register at NVIDIA, download CUDNN 5 runtinme lib on your local machine and SCP it to the remot instance:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;scp cudnn-8.0-linux-x64-v5.1.tgz ubuntu@ec2-35-156-52-27.eu-central-1.compute.amazonaws.com:~/Downloads/&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now make the runfile executable and install CUDA but don’t install the driver. Also the –override option helps to prevent some annoying errors, which could happen.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;IMPORTANT: Be sure to use the –no-opengl-libs option&lt;/strong&gt;&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;chmod +x cuda_8.0.44_linux-run
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo sh cuda_8.0.44_linux-run --extract&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;~/Downloads/
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo sh cuda_8.0.44_linux-run --override --no-opengl-libs&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now open your .bashrc&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;nano ~/.bashrc&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;and add the following lines:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;LD_LIBRARY_PATH&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;&quot;&lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;$LD_LIBRARY_PATH&lt;/span&gt;&lt;span class=&quot;s2&quot;&gt;:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64&quot;&lt;/span&gt;
+&lt;span class=&quot;nb&quot;&gt;export &lt;/span&gt;&lt;span class=&quot;nv&quot;&gt;CUDA_HOME&lt;/span&gt;&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;/usr/local/cuda&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;If the SCP operation is complete, extract it to the right locations.&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo tar -xzvf cudnn-8.0-linux-x64-v5.1.tgz
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo cp cuda/include/cudnn.h /usr/local/cuda/include
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo cp cuda/lib64/libcudnn&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt; /usr/local/cuda/lib64
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn&lt;span class=&quot;k&quot;&gt;*&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Reboot one more time:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;chmod +x ~/Downloads/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo sh ~/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run --no-opengl-files
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo reboot&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Now git clone Tensorflow and start the configuration:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;git clone https://github.com/tensorflow/tensorflow
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cd&lt;/span&gt; ~/tensorflow
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;./configure&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;I used  &lt;strong&gt;/usr/bin/python3.5&lt;/strong&gt; for the Python binary and &lt;strong&gt;/usr/local/lib/python3.5/dist-packages&lt;/strong&gt; for the path, Cuda SDK &lt;strong&gt;8.0&lt;/strong&gt;, cudnn &lt;strong&gt;5.1.5&lt;/strong&gt;, compiled without cloud-support and OpenCL but with GPU support of course. Computing capabilities for the instance are are &lt;strong&gt;3.0&lt;/strong&gt;.&lt;/p&gt;
+
+&lt;p&gt;Okay, now we compile everything:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;bazel build -c opt --config&lt;span class=&quot;o&quot;&gt;=&lt;/span&gt;cuda //tensorflow/tools/pip_package:build_pip_package&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;This will take some time. You could watch this video while you’re waiting:&lt;/p&gt;
+&lt;iframe width=&quot;1120&quot; height=&quot;630&quot; src=&quot;https://www.youtube.com/embed/oQbei5JGiT8&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+&lt;p&gt;Build the wheel:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;If you want, you can use a virtual environment:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;python3 -m venv --system-site-packages ~/tensorflow
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;source&lt;/span&gt; ~/tensorflow/bin/activate
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;pip3 install /tmp/tensorflow_pkg/tensorflow-0.11.0rc2-cp35-cp35m-linux_x86_64.whl&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Installing OpenAI Gym is pretty straight forward, cause the people at OpenAI and all other contributers have done an amazing job (:
+Sometimes there are some problems with Box2D. If you want to be sure, follow the instructions below.
+We already installed Swig (we need 3.x before compiling Box2D).
+Git clone Pybox2d&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;git clone https://github.com/pybox2d/pybox2d.git&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Build and install it:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;&lt;span class=&quot;nb&quot;&gt;cd &lt;/span&gt;pybox2d
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;python setup.py build
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;python setup.py install&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Installing OpenAI Gym should now be no trouble at all. We already installed most of the dependencies but I copy-pasted everything from their github instructions just to be sure:&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;git clone https://github.com/openai/gym.git
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;sudo apt-get install -y python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig
+&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;pip install -e &lt;span class=&quot;s1&quot;&gt;&#39;.[all]&#39;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;If you had problems running OpenAI Gym headless using xvfb as X-server it should now work, if you do as explained by &lt;a href=&quot;https://github.com/tlbtlbtlb&quot;&gt;Trevor Blackwell&lt;/a&gt; in &lt;a href=&quot;https://github.com/openai/gym/issues/247#issuecomment-232731446&quot;&gt;this&lt;/a&gt; post (the GLX option is active by default):&lt;/p&gt;
+
+&lt;figure class=&quot;highlight&quot;&gt;&lt;pre&gt;&lt;code class=&quot;language-bash&quot; data-lang=&quot;bash&quot;&gt;&lt;span class=&quot;gp&quot;&gt;$ &lt;/span&gt;xvfb-run -a -s &lt;span class=&quot;s2&quot;&gt;&quot;-screen 0 1400x900x24 +extension RANDR&quot;&lt;/span&gt; -- python XXX.py&lt;/code&gt;&lt;/pre&gt;&lt;/figure&gt;
+
+&lt;p&gt;Have fun (:&lt;/p&gt;
+
+&lt;p&gt;If you run into any troubles, just let me know. I’m always happy to help.&lt;/p&gt;
+</description>
+        <pubDate>Sun, 13 Nov 2016 00:00:00 +0100</pubDate>
+      </item>
+    
+      <item>
+        <title>Tea and Consent&amp;#58;</title>
+        <link>https://davidsanwald.github.io/2016/11/12/Tea-and-consent.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/11/12/Tea-and-consent.html</guid>
+        <description>&lt;iframe width=&quot;1120&quot; height=&quot;630&quot; src=&quot;https://www.youtube.com/embed/oQbei5JGiT8&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+&lt;!--more--&gt;
+
+&lt;iframe width=&quot;1120&quot; height=&quot;630&quot; src=&quot;https://www.youtube.com/embed/oQbei5JGiT8&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+
+&lt;p&gt;I just like this way too much to not post it.
+It’s not about coding in anyway but about something which matters even more. The video reminds me of the fact, that something being very simple does not keep people from getting it wrong.&lt;/p&gt;
+
+&lt;h3 id=&quot;to-make-it-a-little-less-off-topic&quot;&gt;To make it a little less off-topic:&lt;/h3&gt;
+
+&lt;p&gt;&lt;img src=&quot;https://upload.wikimedia.org/wikipedia/commons/a/aa/Youngronaldfisher2.JPG&quot; alt=&quot;Good old Fisher. Sadly he had some really stupid ideas about race :(&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;What would &lt;a href=&quot;https://en.wikipedia.org/wiki/Lady_tasting_tea&quot;&gt;he&lt;/a&gt; say? (;&lt;/p&gt;
+</description>
+        <pubDate>Sat, 12 Nov 2016 00:00:00 +0100</pubDate>
+      </item>
+    
+      <item>
+        <title>Easy Start Into Reinforcement Learning Using Jupyter Notebook and Code First Approach</title>
+        <link>https://davidsanwald.github.io/2016/09/12/RL-tutorial.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/09/12/RL-tutorial.html</guid>
+        <description>&lt;p&gt;&lt;img src=&quot;/img/cliffviz.svg&quot; alt=&quot;Policy of Q-learning agent&quot; /&gt;
+&lt;!--more--&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/cliffviz.svg&quot; alt=&quot;Policy of Q-learning agent&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;I love Reinforcement Learning and I also love math but I know the first steps into RL can be pretty intimidating. So I began working on something helping to understand the basics of RL without the need of large amounts of math.
+Furthermore I kept the code “lean” in a notebook style. Of course there’s some amount a hardcoding and code repetition but I think this way it’s easier to understand the algorithm behind the code.&lt;/p&gt;
+
+&lt;p&gt;It’s definitely not finished but your input and opinions are very welcome.&lt;/p&gt;
+
+&lt;p&gt;You can try it on mybinder and execute the code right in your browser (sometimes down):&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://mybinder.org/repo/davidsanwald/ai-notebook&quot;&gt;http://mybinder.org/repo/davidsanwald/ai-notebook&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Static version:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;http://nbviewer.jupyter.org/github/DavidSanwald/ai-notebook/blob/master/index.ipynb&quot;&gt;http://nbviewer.jupyter.org/github/DavidSanwald/ai-notebook/blob/master/index.ipynb&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;Or download on github:&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&quot;https://github.com/DavidSanwald/ai-notebook&quot;&gt;https://github.com/DavidSanwald/ai-notebook&lt;/a&gt;&lt;/p&gt;
+</description>
+        <pubDate>Mon, 12 Sep 2016 00:00:00 +0200</pubDate>
+      </item>
+    
+      <item>
+        <title>Universities Have to Emancipate From Using MATLAB NOW!</title>
+        <link>https://davidsanwald.github.io/2016/08/25/MATLAB-still-being-taught-makes-me-sad.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/08/25/MATLAB-still-being-taught-makes-me-sad.html</guid>
+        <description>&lt;p&gt;&lt;strong&gt;DISCLAIMER:&lt;/strong&gt; This is written from my perspective as an engineering student (!), still having a lot to learn.&lt;/p&gt;
+
+&lt;p&gt;I think teaching MATLAB to engineering students is one of the most harmful mistakes universities make in the education of their students.
+There’s a lot of interesting and clever critique about MATLAB as a language from people, who really know what they are talking about.
+For example:&lt;/p&gt;
+&lt;blockquote class=&quot;twitter-tweet&quot; data-lang=&quot;en&quot;&gt;&lt;p lang=&quot;en&quot; dir=&quot;ltr&quot;&gt;You need to stop teaching your students Matlab now &lt;a href=&quot;http://t.co/9t2DMA1yJI&quot;&gt;http://t.co/9t2DMA1yJI&lt;/a&gt;&lt;/p&gt;&amp;mdash; Régis Behmo (@regisb) &lt;a href=&quot;https://twitter.com/regisb/status/506422540236251136&quot;&gt;September 1, 2014&lt;/a&gt;&lt;/blockquote&gt;
+&lt;script async=&quot;&quot; src=&quot;//platform.twitter.com/widgets.js&quot; charset=&quot;utf-8&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;But to me the most important point why I consider MATLAB taught to students very harmful is something different:&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;MATLAB is almost exclusively used by engineers.&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;That’s why you never get out your bubble of other engineers and get the chance to learn from other professions like programmers, computer scientists about crafting code. MATLAB makes it very easy to use it as an super advanced calculator or to write spaghetti-code scripts.
+I think there is nothing bad about it and I can imagine who great MATLAB was, connecting an interpreted script-language with the access to FORTRAN libraries for extremely fast matrix computations. I think being able to play with data in an exploratory manner, trying things out on the fly, without makefiles, compiling stuff all the time etc. is very important in some scientific research.&lt;/p&gt;
+
+&lt;p&gt;But because MATLAB is completely isolated from everything outside engineering, you never even get the chance to realize what you don’t know:&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;you won’t get exposed to version control&lt;/li&gt;
+  &lt;li&gt;you don’t learn about the benefits of open source&lt;/li&gt;
+  &lt;li&gt;you don’t get advice from people who don’t own some really expensive MATLAB license&lt;/li&gt;
+  &lt;li&gt;there’s not much public code from people, who actually are crafting code for a living you can learn from to get better&lt;/li&gt;
+  &lt;li&gt;you don’t learn about good documentation practices, writing unit tests, SOLID-principles etc. etc.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Of course everything above is also possible with MATLAB. But I had to learn the hard way that you don’t even know what’s out there.
+It is perfectly fine if someone just needs some calculator on steroids but as soon as there’s a need to scale, to collaborate, to involve other people, to make the code reliable, you suddenly hit a wall. And most of the times, you don’t know that you will get there as you just start a project.&lt;/p&gt;
+
+&lt;p&gt;If there wouldn’t be alternatives like Python with Numpy/Scipy maybe the advantages of MATLAB would be worth the sacrifices. But these times I think it is really hurtful that universities still teach MATLAB to students, because this enforces separation instead of collaboration and if the universities can’t support the spread of free software, making it easier to communicate with other fields of science, who will?&lt;/p&gt;
+</description>
+        <pubDate>Thu, 25 Aug 2016 00:00:00 +0200</pubDate>
+      </item>
+    
+      <item>
+        <title>Cynical Reinforcement Learning</title>
+        <link>https://davidsanwald.github.io/2016/08/10/cynical-RL.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/08/10/cynical-RL.html</guid>
+        <description>&lt;p&gt;Sometimes the world of reinforcement learning is so dark and cynical.
+Gridworlds like the one I plottet below are utilized to experiment and explore different core characteristics of learning agents.
+Unfortunately they aren’t as popular as they have been as a research tool (&lt;a href=&quot;https://research.facebook.com/publications/mazebase-a-sandbox-for-learning-from-games/&quot;&gt;this paper&lt;/a&gt; shows that gridworlds still are very relevant) they are still omnipresent in teaching because they have so small discrete state spaces and actual humans can actually understand the state representations (mostly just xy coordinates on a grid).
+The example below  has the following rules(taken from the excellent Sutton and Barto’s amazing &lt;a href=&quot;https://webdocs.cs.ualberta.ca/~sutton/book/ebook/node65.html&quot;&gt;book&lt;/a&gt; on RL).&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;The agent starts in the top left corner.&lt;/li&gt;
+  &lt;li&gt;Each step gets an negative reward of &lt;strong&gt;-1&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;If the agent steps on one of the magenta cliff tiles on the top, there is a negative reward of &lt;strong&gt;-100&lt;/strong&gt; for falling off the cliff and the agent has to start again from the top left corner.&lt;/li&gt;
+  &lt;li&gt;The goal is to reach the top right corner. When reaching the top right corner, everything starts all over again.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/cliff_map.png&quot; alt=&quot;A world of pain and suffering!!&quot; /&gt;&lt;/p&gt;
+
+&lt;p&gt;Sometimes it strikes me how dark, twisted and cynical this is, even though it’s just a toy example. Basically it states&lt;/p&gt;
+
+&lt;ul&gt;
+  &lt;li&gt;&lt;strong&gt;-1&lt;/strong&gt; for every step you make means nothing less than &lt;strong&gt;living is suffering&lt;/strong&gt;&lt;/li&gt;
+  &lt;li&gt;Even if you reach your goal you don’t get any reward, just you’re suffering ends till it starts all over again. You can’t escape.&lt;/li&gt;
+  &lt;li&gt;Jumping off the cliff won’t help you. You just have to start over again. There’s no escape.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;There’s also a much more positive life lesson one could learn from &lt;script type=&quot;math/tex&quot;&gt;\epsilon&lt;/script&gt;-greedy exploration policies. I’ll definitely have to write about it soon, to balance out this post.&lt;/p&gt;
+</description>
+        <pubDate>Wed, 10 Aug 2016 00:00:00 +0200</pubDate>
+      </item>
+    
+      <item>
+        <title>New Love&amp;#58; The First Bass Is the Deepest</title>
+        <link>https://davidsanwald.github.io/2016/07/20/bass-love.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/07/20/bass-love.html</guid>
+        <description>&lt;p&gt;&lt;img src=&quot;/img/bass10.jpg&quot; alt=&quot;The first bass is the deepest!&quot; /&gt;&lt;/p&gt;
+
+&lt;!--more--&gt;
+&lt;p&gt;I’m so happy with my new bass right now, I had to post some pictures.
+It’s a 5-string Marcus Miller V7 Swamp-Ash with maple neck and it’s the first bass I own.
+Maybe I will record something as soon as my playing matches the beauty of the bass (;
+But I guess this could take some time and maybe it will even cost me some bleeding fingers (;&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&quot;/img/bass8.jpg&quot; alt=&quot;The first bass is the deepest!&quot; /&gt;
+&lt;img src=&quot;/img/bass11.jpg&quot; alt=&quot;The first bass is the deepest!&quot; /&gt;
+&lt;img src=&quot;/img/bass12.jpg&quot; alt=&quot;The first bass is the deepest!&quot; /&gt;
+&lt;img src=&quot;/img/bass10.jpg&quot; alt=&quot;The first bass is the deepest!&quot; /&gt;&lt;/p&gt;
+</description>
+        <pubDate>Wed, 20 Jul 2016 00:00:00 +0200</pubDate>
+      </item>
+    
+      <item>
+        <title>Hello World!</title>
+        <link>https://davidsanwald.github.io/2016/05/15/hello-world.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/05/15/hello-world.html</guid>
+        <description>&lt;p&gt;&lt;img src=&quot;/img/laziness.jpg&quot; alt=&quot;Functional way of life!&quot; /&gt;
+I just couldn’t resist as beginning this small blog with the classic “Hello world!” and also some functional life advice:
+&lt;!--more--&gt;
+&lt;img src=&quot;/img/laziness.jpg&quot; alt=&quot;Functional way of life!&quot; /&gt;
+I just couldn’t resist as beginning this small blog with the classic “Hello world!” and also some functional life advice:&lt;/p&gt;
+
+&lt;p&gt;This seems very appropriate because it is the classical learning example. And because I’m a soon to be mechanical engineering graduate striving to learn how to write good code and do something with it, this blog will be from my perspective as a learner.
+As I don’t know if anything I’ll write about will be of interest for anyone else but me I’m starting this blog mainly to organize my thoughts and keep track of my journey as a learner. I can imagine my future me someday reading a few posts in this blog and laughing about how stupid I have been back then.
+Maybe “someday” will already be next week :)
+I really like John D. Cook’s blog and I think the absolut worst “Hello world” ever he discovered in &lt;a href=&quot;https://www.amazon.com/gp/product/1556153953/ref=as_li_tl?ie=UTF8&amp;amp;camp=1789&amp;amp;creative=390957&amp;amp;creativeASIN=1556153953&amp;amp;linkCode=as2&amp;amp;tag=theende-20&amp;amp;linkId=6NLKFFPXQOB2C7OA&quot;&gt;this&lt;/a&gt; book about Win 3.1 programming is really worth a &lt;a href=&quot;http://www.johndcook.com/blog/2014/11/12/hello-world-is-the-hard-part/&quot;&gt;look&lt;/a&gt;.&lt;/p&gt;
+</description>
+        <pubDate>Sun, 15 May 2016 00:00:00 +0200</pubDate>
+      </item>
+    
+  </channel>
+</rss>
