@@ -5,7 +5,7 @@ permalink: /about/
 ---
 
 
-### Hello World <3 <3 <3
+### Hello World <3<3<3
 
 I'm David, an engineering student based in Berlin. I love tinkering with AI/reinforcement learning algorithms.
 Apart from playing with deep learning algorithms, I like learning all kinds of new things. For quite some time many of them were about learning about how I can improve my coding skills.
