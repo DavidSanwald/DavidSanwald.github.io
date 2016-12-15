@@ -1,7 +1,7 @@
 # SITE CONFIGURATION
 baseurl: "" # the subpath of your site, e.g. /blog/
 url: "https://davidsanwald.github.io" #"https://davidsanwald.github.io" # the base hostname & protocol for your site
-username: "DavidSanwald"
+username: "David Sanwald"
 repo: DavidSanwald.github.io
 branch: travis
 destination:  "_site"
@@ -17,7 +17,7 @@ theme_settings:
 
   # Header and footer text
   header_text: >
-     <p>If you are nice, some part of my &#9829; will also belong to you! </p>
+     <p>If you are nice, some part of my &#9829; will also belong to you... </p>
   header_text_feature_image:
   footer_text:  >
     &#9829; &#9829; &#9829;  to  <a href="https://rohanchandra.github.io/project/type/">Type Theme</a>

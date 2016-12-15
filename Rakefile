@@ -199,11 +199,16 @@ namespace :site do
 
     # Configure git if this is run in Travis CI
     if ENV["CI"]
-
+      sh "git config --global user.name '#{ENV['GIT_NAME']}'"
+      sh "git config --global user.email '#{ENV['GIT_EMAIL']}'"
+      sh "git config --global push.default simple"
     end
 
     # Make sure destination folder exists as git repo
     check_destination
+    sh "git config --global user.name '#{ENV['GIT_NAME']}'"
+    sh "git config --global user.email '#{ENV['GIT_EMAIL']}'"
+    sh "git config --global push.default simple"
     sh "git show-ref"
     sh "git checkout #{SOURCE_BRANCH}"
     Dir.chdir(CONFIG["destination"]) { sh "git checkout #{DESTINATION_BRANCH}" }
@@ -214,9 +219,6 @@ namespace :site do
     # Commit and push to github
     sha = `git log`.match(/[a-z0-9]{40}/)[0]
     Dir.chdir(CONFIG["destination"]) do
-      sh "git config --global user.name '#{ENV['GIT_NAME']}'"
-      sh "git config --global user.email '#{ENV['GIT_EMAIL']}'"
-      sh "git config --global push.default simple"
       sh "git add --all ."
       sh "git commit -m 'Updating to #{USERNAME}/#{REPO}@#{sha}.'"
       sh "git push origin #{DESTINATION_BRANCH}"
