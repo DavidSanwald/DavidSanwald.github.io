@@ -4,7 +4,7 @@ url: "https://davidsanwald.github.io" #"https://davidsanwald.github.io" # the ba
 username: "DavidSanwald"
 repo: DavidSanwald.github.io
 branch: travis
-destination: _site
+destination: ../_site/
 source: .
 
 # THEME-SPECIFIC CONFIGURATION
