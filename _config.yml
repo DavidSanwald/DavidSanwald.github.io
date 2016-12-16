@@ -60,7 +60,7 @@ theme_settings:
 
   # Colours, typography and padding
   # Open the "_sass > base" folder, and open "_variables.scss"
-  google_fonts: "Source+Sans+Pro:400,700,700italic,400italic"
+  google_fonts: "Fira+Sans:400,700,700italic,400italic"
 
   # Post navigation
   post_navigation: false
@@ -77,7 +77,7 @@ math_engine: mathjax
 sass:
   sass_dir: _sass
   style: :compressed
-gems: [jekyll-paginate, jekyll-seo-tag, jekyll/scholar]
+gems: [jekyll-paginate, jekyll-seo-tag, jekyll/scholar, jekyll/footnotes]
 exclude: [vendor]
 
 
