@@ -210,7 +210,6 @@ namespace :site do
     sh "git config --global user.name '#{ENV['GIT_NAME']}'"
     sh "git config --global user.email '#{ENV['GIT_EMAIL']}'"
     sh "git config --global push.default simple"
-    sh "git show-ref"
     sh "git checkout #{SOURCE_BRANCH}"
     Dir.chdir(CONFIG["destination"]) { sh "git checkout #{DESTINATION_BRANCH}" }
 
