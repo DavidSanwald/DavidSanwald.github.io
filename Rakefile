@@ -191,11 +191,11 @@ namespace :site do
     sh "bundle exec jekyll serve --watch"
   end
 
-  namespace :site do
-    desc "Test site hopefully"
-    task :test do => [:build]
-      sh "bundle exec htmlproofer ./_site --only-4xx --check-favicon --check-html
-    end
+
+  desc "Test site hopefullyg"
+  task :test do => [:build]
+    sh "bundle exec htmlproofer ./_site --only-4xx --check-favicon --check-html"
+  end
 
   desc "Generate the site and push changes to remote origin"
   task :deploy do
