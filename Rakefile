@@ -193,7 +193,7 @@ namespace :site do
 
 
   desc "Test site hopefullyg"
-  task :test do => [:build]
+  task :test => [:build] do 
     sh "bundle exec htmlproofer ./_site --only-4xx --check-favicon --check-html"
   end
 
