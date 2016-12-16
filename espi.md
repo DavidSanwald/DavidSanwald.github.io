@@ -10,7 +10,9 @@ But I decided to link to 3 recent examples, of things where I learned or shared 
 At the first glance there may be nothing directly related to an internship position at ESPI but I hope these examples could display my general attitude towards writing code and being persistent until something finally works.
 
 1. This week I [wrote][1] about how to implement some reinforcement learning agent based on recently published advances in AI. The complete code is also on [Github][4].
+
 2. I started working on [this][2] Jupyter notebook{% fn %} explaining the basic mechanics of reinforcement learning.
+
 3. [Here][3] I wrote the steps down, when I finally got NVIDA CUDA drivers to work with Google's Tensorflow and OpenAI Gym on an AWS EC2 instance after a few nights trying many different approaches. To be honest this is the most boring thing ever but I think it's a good example for not giving up even when it means night after night fighting with bad NVIDIA drivers on a linux server.
 
 Furthermore I began to put increasing efforts on catching up with web related technologies.
