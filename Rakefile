@@ -206,10 +206,6 @@ namespace :site do
 
     # Make sure destination folder exists as git repo
     check_destination
-    sh "git config -l"
-    sh "git config --global user.name '#{ENV['GIT_NAME']}'"
-    sh "git config --global user.email '#{ENV['GIT_EMAIL']}'"
-    sh "git config --global push.default simple"
     sh "git checkout #{SOURCE_BRANCH}"
     Dir.chdir(CONFIG["destination"]) { sh "git checkout #{DESTINATION_BRANCH}" }
 
@@ -221,7 +217,7 @@ namespace :site do
     Dir.chdir(CONFIG["destination"]) do
       sh "git add --all ."
       sh "git commit -m 'Updating to #{USERNAME}/#{REPO}@#{sha}.'"
-      sh "git push origin #{DESTINATION_BRANCH}"
+      sh "git push --quiet origin #{DESTINATION_BRANCH}"
       puts "Pushed updated branch #{DESTINATION_BRANCH} to GitHub Pages"
     end
   end
