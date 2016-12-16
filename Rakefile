@@ -191,6 +191,12 @@ namespace :site do
     sh "bundle exec jekyll serve --watch"
   end
 
+  namespace :site do
+    desc "Test site"
+    task :test do => [:build]
+      sh "bundle exec htmlproofer ./_site --only-4xx --check-favicon --check-html
+    end
+
   desc "Generate the site and push changes to remote origin"
   task :deploy do
     # Detect pull request
@@ -212,7 +218,7 @@ namespace :site do
     Dir.chdir(CONFIG["destination"]) { sh "git checkout #{DESTINATION_BRANCH}" }
 
     # Generate the site
-    sh "bundle exec jekyll build"
+    Rake::Task['site:test'].invoke
 
     # Commit and push to github
     sha = `git log`.match(/[a-z0-9]{40}/)[0]
