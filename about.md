@@ -21,4 +21,5 @@ Also I want to share this small video I recently discovered. Why? Because I like
 <iframe width="1120" height="630" src="https://www.youtube.com/embed/oQbei5JGiT8" frameborder="0" allowfullscreen></iframe>
 
 XOXO
+
 David
