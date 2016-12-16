@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Getting CUDA 8 to Work With openAI Gym on AWS and Compiling Tensorflow for CUDA 8 Compatibility | random walks and lots of &#9829;s</title>
+	<meta name="description" content="The necessary steps to get CUDA and cuDNN to work with an virtual framebuffer like xvfb, so that you can use openAI Gym. Also included how to compile Tensorf...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-Frame-Options" content="sameorigin">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="https://davidsanwald.github.io/2016/11/13/building-tensorflow-with-gpu-support.html">
+
+	<!-- RSS -->
+	<link rel="alternate" type="application/atom+xml" title="random walks and lots of &#9829;s" href="https://davidsanwald.github.io/feed.xml" />
+
+	<!-- Font Awesome -->
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+	<script type="text/javascript" async
+	  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+	</script>
+	
+
+	<!-- Google Analytics -->
+	
+<!-- Begin Jekyll SEO tag v2.0.0 -->
+<title>Getting CUDA 8 to Work With openAI Gym on AWS and Compiling Tensorflow for CUDA 8 Compatibility</title>
+<meta property="og:title" content="Getting CUDA 8 to Work With openAI Gym on AWS and Compiling Tensorflow for CUDA 8 Compatibility" />
+<meta name="description" content="The necessary steps to get CUDA and cuDNN to work with an virtual framebuffer like xvfb, so that you can use openAI Gym. Also included how to compile Tensorflow using Google’s Bazel." />
+<meta property="og:description" content="The necessary steps to get CUDA and cuDNN to work with an virtual framebuffer like xvfb, so that you can use openAI Gym. Also included how to compile Tensorflow using Google’s Bazel." />
+<link rel="canonical" href="https://davidsanwald.github.io/2016/11/13/building-tensorflow-with-gpu-support.html" />
+<meta property="og:url" content="https://davidsanwald.github.io/2016/11/13/building-tensorflow-with-gpu-support.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2016-11-13T00:00:00+00:00" />
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Getting CUDA 8 to Work With openAI Gym on AWS and Compiling Tensorflow for CUDA 8 Compatibility",
+    "datePublished": "2016-11-13T00:00:00+00:00",
+    "description": "The necessary steps to get CUDA and cuDNN to work with an virtual framebuffer like xvfb, so that you can use openAI Gym. Also included how to compile Tensorflow using Google’s Bazel.",
+    "url": "https://davidsanwald.github.io/2016/11/13/building-tensorflow-with-gpu-support.html"
+  }
+</script>
+<!-- End Jekyll SEO tag -->
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/img/avatar.png" alt=""/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">random walks and lots of &#9829;s</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					About
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled -->
+			
+
+
+<li>
+	<a href="mailto:why.ever.not.berlin@gmail.com" title="Email">
+		<i class="fa fa-fw fa-envelope"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/DavidSanwald" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://twitter.com/DavidSanwald" title="Follow on Twitter">
+		<i class="fa fa-fw fa-twitter"></i>
+	</a>
+</li>
+
+
+
+
+
+
+		</ul>
+	</nav>
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Getting CUDA 8 to Work With openAI Gym on AWS and Compiling Tensorflow for CUDA 8 Compatibility</h1>
+    <p class="subtitle"> </p>
+    <p class="meta">
+    November 13, 2016
+    
+    </p>
+  </header>
+  <section class="post-content"><p>I had some hard time getting Tensorflow with GPU support and <a href="https://gym.openai.com/">OpenAI Gym</a> at the same time working on an AWS EC2 instance. For some time I used <a href="https://github.com/NVIDIA/nvidia-docker/">NVIDIA-Docker</a> for this but as much as I love Docker, depending on special access to the (NVIDIA) GPU drivers, took away some of the biggest advantages when using Docker, at least for my use cases. Running OpenAI Gym in a normal container, exposing some port to the outside and running agents/neural nets etc. elsewhere seems like a really promising approach and I’m looking forward to it being ready.</p>
+
+<p>There are good <a href="https://alliseesolutions.wordpress.com/2016/09/08/install-gpu-tensorflow-from-sources-w-ubuntu-16-04-and-cuda-8-0-rc/">explanations</a> on how to get Tensorflow with CUDA going, those were pretty helpful to me. However I suppose they were mostly concerned with supervised learning.
+If you want to run certain OpenAI Gym environments headless on a server, you have to provide an X-server to them, even when you don’t want to render a video. You can use a virtual framebuffer like xvfb for this, it works fine. But I never could getting it to work with GLX support. Also other solutions like X-Dummy failed.
+The problem is, that there’s no way to keep NVIDIA from installing OpenGl-libs, when using packages from some repo (which most of the tutorials do, because it’s way more convenient). Finally <a href="https://github.com/openai/gym/issues/366#issuecomment-251967650">this</a> comment by pemami4911 in a github issue pointed me into the right direction. Since many people seem to run into the same problems, maybe the following will spare you some trouble.</p>
+
+<p>I’m using Python 3 because it really annoys me, that everyone still uses Python 2.7 in the deep learning community. Also I’m using Ubuntu Ubuntu 16.04 LTS XENIAL XERUS because it’s released for ages (even the official Canonical AMI on AWS) and when spinning up a single new instance for computing just a few things, I don’t see why I would use Ubuntu 14.04, just because 16.04 is not among the three AMIs AWS offers to me first.
+But I think it should be no trouble to adapt this to other needs.</p>
+
+<p>OT: <em>I also recommend using the AWS CLI together with the <a href="https://github.com/robbyrussell/oh-my-zsh">oh-my-zsh</a> AWS plugin, because zsh and especially oh-my-zsh is awesome.</em></p>
+
+<p>Okay, let’s begin:</p>
+
+<p>Go to  <a href="https://cloud-images.ubuntu.com/locator/ec2/">https://cloud-images.ubuntu.com/locator/ec2/</a> and look for the Ubuntu 16.04 LST XENIAL XERUS hvm:ebs-ssd	AMI from Canonical. For eu-central-1 it’s <strong>ami-8504fdea</strong>.
+Spin up a new EC2 GPU instance (<strong>g2.2xlarge</strong> will do) using that AMI (use a spot instance if you are as broke as me). I recommend using at least 20GB as root volume.
+SSH into your instance, username is <strong>ubuntu</strong>.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>sudo apt-get update
+<span class="gp">$ </span>sudo apt-get -y dist-upgrade</code></pre></figure>
+
+<p>Let’s get some basics:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>sudo apt-get install openjdk-8-jdk git python-dev python3-dev python-numpy python3-numpy build-essential python-pip python3-pip python3-venv swig python3-wheel libcurl3-dev</code></pre></figure>
+
+<p>The Java stuff is for <a href="https://bazel.build/">Bazel</a> Google’s build tool we will use later for compiling Tensorflow. We will use openJDK but if you have to, you can also use the proprietary one from Oracle.</p>
+
+<p>Also  some kernel sources, compilers and other stuff:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>sudo apt-get install -y gcc g++ gfortran  git linux-image-generic linux-headers-generic linux-source linux-image-extra-virtual libopenblas-dev</code></pre></figure>
+
+<p>As we are on it, let’s install Bazel right now:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span><span class="nb">echo</span> <span class="s2">"deb [arch=amd64] http://storage.googleapis.com/bazel-apt stable jdk1.8"</span> | sudo tee /etc/apt/sources.list.d/bazel.list
+<span class="gp">$ </span>curl https://storage.googleapis.com/bazel-apt/doc/apt-key.pub.gpg | sudo apt-key add -
+<span class="gp">$ </span>sudo apt-get update
+<span class="gp">$ </span>sudo apt-get install bazel
+<span class="gp">$ </span>sudo apt-get upgrade bazel</code></pre></figure>
+
+<p>Now curl or wget the right NVIDIA driver. For the GRID K520 GPU <strong>367.57</strong> should be the right choice (maybe Linus would it <a href="https://www.youtube.com/watch?v=iYWzMvlj2RQ">call</a> the least wrong choice at most).</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>wget -P ~/Downloads/ http://us.download.nvidia.com/XFree86/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run</code></pre></figure>
+
+<p>NVIDIA will clash with the nouveau driver so deactivate it:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>sudo nano /etc/modprobe.d/blacklist-nouveau.conf</code></pre></figure>
+
+<p>Insert the following lines and save:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">blacklist nouveau
+blacklist lbm-nouveau
+options nouveau <span class="nv">modeset</span><span class="o">=</span>0
+<span class="nb">alias </span>nouveau off
+<span class="nb">alias </span>lbm-nouveau off</code></pre></figure>
+
+<p>Update the initframs (basically functionality to mount your real rootfs, which has been outsourced from the kernel) and reboot:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>sudo update-initramfs -u
+<span class="gp">$ </span>sudo reboot</code></pre></figure>
+
+<p>Make the NVIDIA driver runfile executable and install the driver and reboot one more time, just to be sure.</p>
+
+<p><strong>IMPORTANT: In my experience xvfb will only work if you use the –no-opengl-files option!</strong></p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>chmod +x ~/Downloads/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run
+<span class="gp">$ </span>sudo sh ~/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run --no-opengl-files
+<span class="gp">$ </span>sudo reboot</code></pre></figure>
+
+<p>Now wget CUDA 8.0. toolkid from NVIDIA</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash">h
+<span class="gp">$ </span>wget https://developer.nvidia.com/compute/cuda/8.0/prod/local_installers/cuda_8.0.44_linux-run</code></pre></figure>
+
+<p>While downloading register at NVIDIA, download CUDNN 5 runtinme lib on your local machine and SCP it to the remot instance:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>scp cudnn-8.0-linux-x64-v5.1.tgz ubuntu@ec2-35-156-52-27.eu-central-1.compute.amazonaws.com:~/Downloads/</code></pre></figure>
+
+<p>Now make the runfile executable and install CUDA but don’t install the driver. Also the –override option helps to prevent some annoying errors, which could happen.</p>
+
+<p><strong>IMPORTANT: Be sure to use the –no-opengl-libs option</strong></p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>chmod +x cuda_8.0.44_linux-run
+<span class="gp">$ </span>sudo sh cuda_8.0.44_linux-run --extract<span class="o">=</span>~/Downloads/
+<span class="gp">$ </span>sudo sh cuda_8.0.44_linux-run --override --no-opengl-libs</code></pre></figure>
+
+<p>Now open your .bashrc</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>nano ~/.bashrc</code></pre></figure>
+
+<p>and add the following lines:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="nb">export </span><span class="nv">LD_LIBRARY_PATH</span><span class="o">=</span><span class="s2">"</span><span class="nv">$LD_LIBRARY_PATH</span><span class="s2">:/usr/local/cuda/lib64:/usr/local/cuda/extras/CUPTI/lib64"</span>
+<span class="nb">export </span><span class="nv">CUDA_HOME</span><span class="o">=</span>/usr/local/cuda</code></pre></figure>
+
+<p>If the SCP operation is complete, extract it to the right locations.</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>sudo tar -xzvf cudnn-8.0-linux-x64-v5.1.tgz
+<span class="gp">$ </span>sudo cp cuda/include/cudnn.h /usr/local/cuda/include
+<span class="gp">$ </span>sudo cp cuda/lib64/libcudnn<span class="k">*</span> /usr/local/cuda/lib64
+<span class="gp">$ </span>sudo chmod a+r /usr/local/cuda/include/cudnn.h /usr/local/cuda/lib64/libcudnn<span class="k">*</span></code></pre></figure>
+
+<p>Reboot one more time:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>chmod +x ~/Downloads/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run
+<span class="gp">$ </span>sudo sh ~/Linux-x86_64/367.57/NVIDIA-Linux-x86_64-367.57.run --no-opengl-files
+<span class="gp">$ </span>sudo reboot</code></pre></figure>
+
+<p>Now git clone Tensorflow and start the configuration:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>git clone https://github.com/tensorflow/tensorflow
+<span class="gp">$ </span><span class="nb">cd</span> ~/tensorflow
+<span class="gp">$ </span>./configure</code></pre></figure>
+
+<p>I used  <strong>/usr/bin/python3.5</strong> for the Python binary and <strong>/usr/local/lib/python3.5/dist-packages</strong> for the path, Cuda SDK <strong>8.0</strong>, cudnn <strong>5.1.5</strong>, compiled without cloud-support and OpenCL but with GPU support of course. Computing capabilities for the instance are are <strong>3.0</strong>.</p>
+
+<p>Okay, now we compile everything:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>bazel build -c opt --config<span class="o">=</span>cuda //tensorflow/tools/pip_package:build_pip_package</code></pre></figure>
+
+<p>This will take some time. You could watch this video while you’re waiting:</p>
+<iframe width="1120" height="630" src="https://www.youtube.com/embed/oQbei5JGiT8" frameborder="0" allowfullscreen=""></iframe>
+<p>Build the wheel:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg</code></pre></figure>
+
+<p>If you want, you can use a virtual environment:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>python3 -m venv --system-site-packages ~/tensorflow
+<span class="gp">$ </span><span class="nb">source</span> ~/tensorflow/bin/activate
+<span class="gp">$ </span>pip3 install /tmp/tensorflow_pkg/tensorflow-0.11.0rc2-cp35-cp35m-linux_x86_64.whl</code></pre></figure>
+
+<p>Installing OpenAI Gym is pretty straight forward, cause the people at OpenAI and all other contributers have done an amazing job (:
+Sometimes there are some problems with Box2D. If you want to be sure, follow the instructions below.
+We already installed Swig (we need 3.x before compiling Box2D).
+Git clone Pybox2d</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>git clone https://github.com/pybox2d/pybox2d.git</code></pre></figure>
+
+<p>Build and install it:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span><span class="nb">cd </span>pybox2d
+<span class="gp">$ </span>python setup.py build
+<span class="gp">$ </span>python setup.py install</code></pre></figure>
+
+<p>Installing OpenAI Gym should now be no trouble at all. We already installed most of the dependencies but I copy-pasted everything from their github instructions just to be sure:</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>git clone https://github.com/openai/gym.git
+<span class="gp">$ </span>sudo apt-get install -y python-numpy python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xorg-dev python-opengl libboost-all-dev libsdl2-dev swig
+<span class="gp">$ </span>pip install -e <span class="s1">'.[all]'</span></code></pre></figure>
+
+<p>If you had problems running OpenAI Gym headless using xvfb as X-server it should now work, if you do as explained by <a href="https://github.com/tlbtlbtlb">Trevor Blackwell</a> in <a href="https://github.com/openai/gym/issues/247#issuecomment-232731446">this</a> post (the GLX option is active by default):</p>
+
+<figure class="highlight"><pre><code class="language-bash" data-lang="bash"><span class="gp">$ </span>xvfb-run -a -s <span class="s2">"-screen 0 1400x900x24 +extension RANDR"</span> -- python XXX.py</code></pre></figure>
+
+<p>Have fun (:</p>
+
+<p>If you run into any troubles, just let me know. I’m always happy to help.</p>
+</section>
+</article>
+
+<!-- Post navigation -->
+
+
+<!-- Disqus -->
+
+<div class="comments">
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+	var disqus_shortname = 'random-walks';
+	(function() {
+		var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+		dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+		(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+</div>
+
+
+<!-- Muut -->
+
+
+    </div>
+    
+<script src="/js/katex_init.js"></script>
+
+
+
+<footer class="site-footer">
+	<p class="text">&#9829; &#9829; &#9829;  to  <a href="https://rohanchandra.github.io/project/type/">Type Theme</a>
+</p>
+</footer>
+
+
+  </body>
+</html>
