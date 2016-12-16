@@ -12,6 +12,7 @@ env:
 install:
 - bundle install
 script: bundle exec rake site:deploy  --quiet
+script: bundle exec htmlproofer ./_site --only-4xx --check-favicon --check-html
 branches:
   only:
   - travis
