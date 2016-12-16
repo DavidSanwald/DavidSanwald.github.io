@@ -4,3 +4,4 @@ Gemfile.lock
 *.rbc
 .bundle
 .config
+_site
