@@ -5,7 +5,77 @@
     <atom:link href="https://davidsanwald.github.io/feed.xml" rel="self" type="application/rss+xml"/>
     <link>https://davidsanwald.github.io/</link>
     <description></description>
-    <pubDate>Fri, 16 Dec 2016 15:45:36 +0000</pubDate>
+    <pubDate>Fri, 16 Dec 2016 21:50:50 +0000</pubDate>
+    
+      <item>
+        <title>Testing and Deploying With Travis CI and Some Other Blog Stuff</title>
+        <link>https://davidsanwald.github.io/2016/12/16/Jekyll-Travis.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/12/16/Jekyll-Travis.html</guid>
+        <description>&lt;p&gt;My first threesome experience with Jekyll and Travis CI, it’s been a rough start but now we’re getting along. And this blog has some new quirky colors. In case you wonder where they’re from:&lt;/p&gt;
+&lt;div class=&quot;tumblr-post&quot; data-href=&quot;https://embed.tumblr.com/embed/post/_YHa9p7lUt4cZBPOOUOuVQ/110716093015&quot; data-did=&quot;21b67e78d15d149f0d55811972d4a27a32d346d1&quot;&gt;&lt;a href=&quot;http://wesandersonpalettes.tumblr.com/post/110716093015/ash-should-we-dance&quot;&gt;http://wesandersonpalettes.tumblr.com/post/110716093015/ash-should-we-dance&lt;/a&gt;&lt;/div&gt;
+&lt;script async=&quot;&quot; src=&quot;https://assets.tumblr.com/post.js&quot;&gt;&lt;/script&gt;
+
+&lt;!--more--&gt;
+
+&lt;h2 id=&quot;tool-addiction-and-life-lessons&quot;&gt;Tool Addiction and Life Lessons&lt;/h2&gt;
+&lt;p&gt;I think I’m not the only one being sort of addicted to trying new shiny things, automating anything or having to use something just because it seems cool.
+Of course there are many things right about continuous integration but the benefits for my tiny blog with it’s very moderate post frequency? Maybe mainly educational (:
+I’m using the &lt;a href=&quot;https://github.com/inukshuk/jekyll-scholar&quot;&gt;Jekyll-Scholar&lt;/a&gt; plugin, which isn’t one of the very few plugins supported by GitHub. So I had to build this blog locally. I used a small Rakefile to compile everything on a source branch and pushing the compiled site to GitHub. It worked perfectly fine. The only downside was, side I couldn’t just write some markdown file from every computer or handy and let GitHub build a blog post from it. But this is more hypothetically in my own use case (note to myself: should post more often).
+That it worked just fine didn’t keep me from switching to remotely building the blog using Travis CI.
+As long as everything works fine, it’s relatively straight forward. This &lt;a href=&quot;https://www.linux.com/learn/how-automate-web-application-testing-docker-and-travis&quot;&gt;article&lt;/a&gt; was really helpful, although it also employs Docker and uses a Flask App example.&lt;/p&gt;
+
+&lt;p&gt;However if things don’t go so smooth…
+In the end it took my a few hours till the first working build on Travis. Somehow my source branch didn’t find the master branch in its refspec, no matter what I tried to update the references. Furthermore my Rakefile refused to find the default environment variables from Travis CI as well as the variables read from my encrypted access token in the .travis.yml file.&lt;/p&gt;
+
+&lt;p&gt;Whatever I’m to new to this to share some clever details about getting your Jekyll builds to pass. But there are two tings:&lt;/p&gt;
+
+&lt;ol&gt;
+  &lt;li&gt;After a few hours fighting with Travis CI and Git I was so hacked off that I accidentally ended up leaving a decrypted access token in some code I copy pasted in a cry for help on stackoverflow. I realized it two minutes afters posting, quickly revoked the token on GitHub. Still not one of my proudest moments but a really humbling life lesson.&lt;/li&gt;
+  &lt;li&gt;I want to give credit, to &lt;a href=&quot;https://github.com/mfenner&quot;&gt;Martin Fenner&lt;/a&gt; because I’m using his Rakefile, which I modified to include testing with &lt;a href=&quot;https://github.com/gjtorikian/html-proofer&quot;&gt;html-proofer&lt;/a&gt;. I also want share &lt;a href=&quot;http://jasonseifer.com/2010/04/06/rake-tutorial&quot;&gt;this&lt;/a&gt; extremely clear Rake tutorial, which really was of great help to me.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&quot;feeling-foxy&quot;&gt;Feeling Foxy&lt;/h2&gt;
+
+&lt;p&gt;I’ve been an admirer of the &lt;a href=&quot;http://wesandersonpalettes.tumblr.com/&quot;&gt;Wes Anderson Palettes&lt;/a&gt; tumblr for a long time. &lt;a href=&quot;https://jiffyclub.github.io/palettable/&quot;&gt;Palettable&lt;/a&gt; made some of them available for scientific plotting with Python and this is also where I discovered the tumblr. I also really like foxes. So I just HAD to use this palette:&lt;/p&gt;
+&lt;div class=&quot;tumblr-post&quot; data-href=&quot;https://embed.tumblr.com/embed/post/_YHa9p7lUt4cZBPOOUOuVQ/110716093015&quot; data-did=&quot;21b67e78d15d149f0d55811972d4a27a32d346d1&quot;&gt;&lt;a href=&quot;http://wesandersonpalettes.tumblr.com/post/110716093015/ash-should-we-dance&quot;&gt;http://wesandersonpalettes.tumblr.com/post/110716093015/ash-should-we-dance&lt;/a&gt;&lt;/div&gt;
+&lt;script async=&quot;&quot; src=&quot;https://assets.tumblr.com/post.js&quot;&gt;&lt;/script&gt;
+
+&lt;p&gt;Besides the colors I’m still enjoying the &lt;a href=&quot;https://github.com/rohanchandra/type-theme&quot;&gt;type&lt;/a&gt; theme. Just changed a few minor things like using Fire Sans as first font if available and switching from KaTeX to MathJax because I was missing a lot of important font options even though KaTeX has much faster rendering.&lt;/p&gt;
+
+&lt;h2 id=&quot;musical-crush-for-the-weekend&quot;&gt;Musical Crush for the Weekend&lt;/h2&gt;
+
+&lt;p&gt;Last week I was as the PWR BTTM concert. They played with Spook School a queer band from Scotland and both were absolutely amazing. I not only love the music but also think bands like this are important, especially in the light of recent political developments. So here’s their Tiny Desk Concert, which I love so much:&lt;/p&gt;
+
+&lt;iframe width=&quot;1120&quot; height=&quot;630&quot; src=&quot;https://www.youtube.com/embed/ji-EdRtL9qU&quot; frameborder=&quot;0&quot; allowfullscreen=&quot;&quot;&gt;&lt;/iframe&gt;
+</description>
+        <pubDate>Fri, 16 Dec 2016 00:00:00 +0000</pubDate>
+      </item>
+    
+      <item>
+        <title>About Being a Good Lister</title>
+        <link>https://davidsanwald.github.io/2016/12/15/listening.html</link>
+        <guid isPermaLink="true">https://davidsanwald.github.io/2016/12/15/listening.html</guid>
+        <description>&lt;!--more--&gt;
+
+&lt;p&gt;I just found this &lt;a href=&quot;https://www.theguardian.com/lifeandstyle/2016/nov/25/how-to-be-a-good-listener-the-experts-guide?CMP=share_btn_link&quot;&gt;article&lt;/a&gt; on the website of theguardian and wanted to share it.
+It’s funny, there are so many articles, guides, companions on how to persuade people, how to control people and all sorts of related Machiavellian things than about listening. I’m quite sure, people aren’t even that mean spirited, I think it’s more that people feel under a certain pressure and believe that things like this are necessary to reach their goals.&lt;/p&gt;
+
+&lt;p&gt;The article is really worth a read but I want to share just one quote from the article:&lt;/p&gt;
+&lt;blockquote&gt;
+  &lt;p&gt;The first step, Pam says, is being aware of the barriers. If your friend is feeling low, even expressing sympathy can get in the way. “We think it’s helpful to say, ‘I know exactly what you mean, I went through something similar…’ but that’s you talking about your own feelings, rather than allowing your friend to tell you what it’s like for them.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Sometimes I think how I feel when I’ve eaten too much. I know it’s not true but everything feels like I will never eat anything again. Or hung over the morning after an excessive night. You feel like you never will drink again.
+These are really simple examples of things everyone experiences (more than once). Yet there’s a barrier and we don’t even really know (let alone feel) how it felt back then although we experienced it ourself.
+This doesn’t mean we shouldn’t be empathic. But I think true empathy only is possible when we don’t forget that we never really know or feel like the one we’re listing too.&lt;/p&gt;
+
+&lt;p&gt;Things like this currently matter to me because I don’t know how to deal with the increasing number of people voting for right wing parties.
+In some way I am happy that I don’t have to deal with those people in my daily life. It’s really easy to live in this liberal, urban bubble, being satisfied with my own beliefs and hating all these narrow minded, queer phobic, or racist people. To be honest, this is what I do most of the time. But I’m thinking more and more if this is the right way to deal with the recent developments.&lt;/p&gt;
+
+&lt;p&gt;Whatever, always be nice ♥&lt;/p&gt;
+</description>
+        <pubDate>Thu, 15 Dec 2016 00:00:00 +0000</pubDate>
+      </item>
     
       <item>
         <title>Defeating the Deadly Triad&amp;#58;</title>
@@ -368,7 +438,7 @@ Something I instantly fell in love with because it just feels good and makes lif
         <description>&lt;p&gt;The necessary steps to get CUDA and cuDNN to work with an virtual framebuffer like xvfb, so that you can use openAI Gym. Also included how to compile Tensorflow using Google’s Bazel.
 &lt;!--more--&gt;&lt;/p&gt;
 
-&lt;p&gt;I had some hard time getting Tensorflow with GPU support and &lt;a href=&quot;https://gym.openai.com/&quot;&gt;OpenAI Gym&lt;/a&gt; at the same time working on an AWS EC2 instance. For some time I used &lt;a href=&quot;https://github.com/NVIDIA/nvidia-docker/&quot;&gt;NVIDIA-Docker&lt;/a&gt; for this but as much as I love Docker, depending on special access to the (NVIDIA) GPU drivers, took away some of the biggest advantages when using Docker, at least for my use cases. Running OpenAI Gym in a normal container, exposing some port to the outside and running agents/neural nets etc. elsewhere seems like a really promising approach and I’m looking forward to it being ready.&lt;/p&gt;
+&lt;p&gt;I had some hard time getting Tensorflow with GPU support and &lt;a href=&quot;https://gym.openai.com/&quot;&gt;OpenAI Gym&lt;/a&gt; at the same time working on an AWS EC2 instance, and it seems like I’m in good &lt;a href=&quot;https://github.com/openai/gym/issues/247&quot;&gt;company&lt;/a&gt;. For some time I used &lt;a href=&quot;https://github.com/NVIDIA/nvidia-docker/&quot;&gt;NVIDIA-Docker&lt;/a&gt; for this but as much as I love Docker, depending on special access to the (NVIDIA) GPU drivers, took away some of the biggest advantages when using Docker, at least for my use cases. Running OpenAI Gym in a normal container, exposing some port to the outside and running agents/neural nets etc. elsewhere seems like a really promising approach and I’m looking forward to it being ready.&lt;/p&gt;
 
 &lt;p&gt;There are good &lt;a href=&quot;https://alliseesolutions.wordpress.com/2016/09/08/install-gpu-tensorflow-from-sources-w-ubuntu-16-04-and-cuda-8-0-rc/&quot;&gt;explanations&lt;/a&gt; on how to get Tensorflow with CUDA going, those were pretty helpful to me. However I suppose they were mostly concerned with supervised learning.
 If you want to run certain OpenAI Gym environments headless on a server, you have to provide an X-server to them, even when you don’t want to render a video. You can use a virtual framebuffer like xvfb for this, it works fine. But I never could getting it to work with GLX support. Also other solutions like X-Dummy failed.

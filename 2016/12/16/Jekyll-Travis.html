@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html class="no-js">
+  <head>
+	<meta charset="utf-8">
+	<title>Testing and Deploying With Travis CI and Some Other Blog Stuff | random walks and lots of &#9829;s</title>
+	<meta name="description" content="My first threesome experience with Jekyll and Travis CI, it’s been a rough start but now we’re getting along. And this blog has some new quirky colors. In ca...">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta http-equiv="X-Frame-Options" content="sameorigin">
+
+	<!-- CSS -->
+	<link rel="stylesheet" href="/css/main.css">
+
+	<!--Favicon-->
+	<link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+
+	<!-- Canonical -->
+	<link rel="canonical" href="https://davidsanwald.github.io/2016/12/16/Jekyll-Travis.html">
+
+	<!-- RSS -->
+	<link rel="alternate" type="application/atom+xml" title="random walks and lots of &#9829;s" href="https://davidsanwald.github.io/feed.xml" />
+
+	<!-- Font Awesome -->
+	<link href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css" rel="stylesheet">
+
+	<!-- Google Fonts -->
+	
+	<link href="//fonts.googleapis.com/css?family=Fira+Sans:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	
+
+	<!-- KaTeX -->
+	
+	<script type="text/javascript" async
+	  src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
+	</script>
+	
+
+	<!-- Google Analytics -->
+	
+<!-- Begin Jekyll SEO tag v2.0.0 -->
+<title>Testing and Deploying With Travis CI and Some Other Blog Stuff</title>
+<meta property="og:title" content="Testing and Deploying With Travis CI and Some Other Blog Stuff" />
+<meta name="description" content="My first threesome experience with Jekyll and Travis CI, it’s been a rough start but now we’re getting along. And this blog has some new quirky colors. In case you wonder where they’re from:http://wesandersonpalettes.tumblr.com/post/110716093015/ash-should-we-dance" />
+<meta property="og:description" content="My first threesome experience with Jekyll and Travis CI, it’s been a rough start but now we’re getting along. And this blog has some new quirky colors. In case you wonder where they’re from:http://wesandersonpalettes.tumblr.com/post/110716093015/ash-should-we-dance" />
+<link rel="canonical" href="https://davidsanwald.github.io/2016/12/16/Jekyll-Travis.html" />
+<meta property="og:url" content="https://davidsanwald.github.io/2016/12/16/Jekyll-Travis.html" />
+<meta property="og:type" content="article" />
+<meta property="article:published_time" content="2016-12-16T00:00:00+00:00" />
+<script type="application/ld+json">
+  {
+    "@context": "http://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Testing and Deploying With Travis CI and Some Other Blog Stuff",
+    "datePublished": "2016-12-16T00:00:00+00:00",
+    "description": "My first threesome experience with Jekyll and Travis CI, it’s been a rough start but now we’re getting along. And this blog has some new quirky colors. In case you wonder where they’re from:http://wesandersonpalettes.tumblr.com/post/110716093015/ash-should-we-dance",
+    "url": "https://davidsanwald.github.io/2016/12/16/Jekyll-Travis.html"
+  }
+</script>
+<!-- End Jekyll SEO tag -->
+</head>
+
+  <body>
+    <header class="site-header">
+	<div class="branding">
+		
+		<a href="/">
+			<img class="avatar" src="/img/avatar.png" alt=""/>
+		</a>
+		
+		<h1 class="site-title">
+			<a href="/">random walks and lots of &#9829;s</a>
+		</h1>
+	</div>
+	<nav class="site-nav">
+		<ul>
+			
+			
+			
+			
+			<li>
+				<a class="page-link" href="/about/">
+					About
+				</a>
+			</li>
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			
+			<!-- Social icons from Font Awesome, if enabled -->
+			
+
+
+<li>
+	<a href="mailto:why.ever.not.berlin@gmail.com" title="Email">
+		<i class="fa fa-fw fa-envelope"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://github.com/DavidSanwald" title="Follow on GitHub">
+		<i class="fa fa-fw fa-github"></i>
+	</a>
+</li>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<li>
+	<a href="https://twitter.com/DavidSanwald" title="Follow on Twitter">
+		<i class="fa fa-fw fa-twitter"></i>
+	</a>
+</li>
+
+
+
+
+
+
+		</ul>
+	</nav>
+</header>
+
+    <div class="content">
+      <article >
+  <header style="background-image: url('/')">
+    <h1 class="title">Testing and Deploying With Travis CI and Some Other Blog Stuff</h1>
+    <p class="subtitle">Also Giving Credit and Trying to be Self-aware </p>
+    <p class="meta">
+    December 16, 2016
+    
+    </p>
+  </header>
+  <section class="post-content"><h2 id="tool-addiction-and-life-lessons">Tool Addiction and Life Lessons</h2>
+<p>I think I’m not the only one being sort of addicted to trying new shiny things, automating anything or having to use something just because it seems cool.
+Of course there are many things right about continuous integration but the benefits for my tiny blog with it’s very moderate post frequency? Maybe mainly educational (:
+I’m using the <a href="https://github.com/inukshuk/jekyll-scholar">Jekyll-Scholar</a> plugin, which isn’t one of the very few plugins supported by GitHub. So I had to build this blog locally. I used a small Rakefile to compile everything on a source branch and pushing the compiled site to GitHub. It worked perfectly fine. The only downside was, side I couldn’t just write some markdown file from every computer or handy and let GitHub build a blog post from it. But this is more hypothetically in my own use case (note to myself: should post more often).
+That it worked just fine didn’t keep me from switching to remotely building the blog using Travis CI.
+As long as everything works fine, it’s relatively straight forward. This <a href="https://www.linux.com/learn/how-automate-web-application-testing-docker-and-travis">article</a> was really helpful, although it also employs Docker and uses a Flask App example.</p>
+
+<p>However if things don’t go so smooth…
+In the end it took my a few hours till the first working build on Travis. Somehow my source branch didn’t find the master branch in its refspec, no matter what I tried to update the references. Furthermore my Rakefile refused to find the default environment variables from Travis CI as well as the variables read from my encrypted access token in the .travis.yml file.</p>
+
+<p>Whatever I’m to new to this to share some clever details about getting your Jekyll builds to pass. But there are two tings:</p>
+
+<ol>
+  <li>After a few hours fighting with Travis CI and Git I was so hacked off that I accidentally ended up leaving a decrypted access token in some code I copy pasted in a cry for help on stackoverflow. I realized it two minutes afters posting, quickly revoked the token on GitHub. Still not one of my proudest moments but a really humbling life lesson.</li>
+  <li>I want to give credit, to <a href="https://github.com/mfenner">Martin Fenner</a> because I’m using his Rakefile, which I modified to include testing with <a href="https://github.com/gjtorikian/html-proofer">html-proofer</a>. I also want share <a href="http://jasonseifer.com/2010/04/06/rake-tutorial">this</a> extremely clear Rake tutorial, which really was of great help to me.</li>
+</ol>
+
+<h2 id="feeling-foxy">Feeling Foxy</h2>
+
+<p>I’ve been an admirer of the <a href="http://wesandersonpalettes.tumblr.com/">Wes Anderson Palettes</a> tumblr for a long time. <a href="https://jiffyclub.github.io/palettable/">Palettable</a> made some of them available for scientific plotting with Python and this is also where I discovered the tumblr. I also really like foxes. So I just HAD to use this palette:</p>
+<div class="tumblr-post" data-href="https://embed.tumblr.com/embed/post/_YHa9p7lUt4cZBPOOUOuVQ/110716093015" data-did="21b67e78d15d149f0d55811972d4a27a32d346d1"><a href="http://wesandersonpalettes.tumblr.com/post/110716093015/ash-should-we-dance">http://wesandersonpalettes.tumblr.com/post/110716093015/ash-should-we-dance</a></div>
+<script async="" src="https://assets.tumblr.com/post.js"></script>
+
+<p>Besides the colors I’m still enjoying the <a href="https://github.com/rohanchandra/type-theme">type</a> theme. Just changed a few minor things like using Fire Sans as first font if available and switching from KaTeX to MathJax because I was missing a lot of important font options even though KaTeX has much faster rendering.</p>
+
+<h2 id="musical-crush-for-the-weekend">Musical Crush for the Weekend</h2>
+
+<p>Last week I was as the PWR BTTM concert. They played with Spook School a queer band from Scotland and both were absolutely amazing. I not only love the music but also think bands like this are important, especially in the light of recent political developments. So here’s their Tiny Desk Concert, which I love so much:</p>
+
+<iframe width="1120" height="630" src="https://www.youtube.com/embed/ji-EdRtL9qU" frameborder="0" allowfullscreen=""></iframe>
+</section>
+</article>
+
+<!-- Post navigation -->
+
+
+<!-- Disqus -->
+
+<div class="comments">
+  <div id="disqus_thread"></div>
+<script type="text/javascript">
+	var disqus_shortname = 'random-walks';
+	(function() {
+		var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+		dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+		(document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+	})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="https://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+
+</div>
+
+
+<!-- Muut -->
+
+
+    </div>
+    
+<script src="/js/katex_init.js"></script>
+
+
+
+<footer class="site-footer">
+	<p class="text">&#9829; &#9829; &#9829;  to  <a href="https://rohanchandra.github.io/project/type/">Type Theme</a>
+</p>
+</footer>
+
+
+  </body>
+</html>

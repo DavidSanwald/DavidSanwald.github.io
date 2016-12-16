@@ -24,7 +24,7 @@
 
 	<!-- Google Fonts -->
 	
-	<link href="//fonts.googleapis.com/css?family=Source+Sans+Pro:400,700,700italic,400italic" rel="stylesheet" type="text/css">
+	<link href="//fonts.googleapis.com/css?family=Fira+Sans:400,700,700italic,400italic" rel="stylesheet" type="text/css">
 	
 
 	<!-- KaTeX -->
@@ -81,6 +81,8 @@
 					About
 				</a>
 			</li>
+			
+			
 			
 			
 			
@@ -166,7 +168,7 @@
     
     </p>
   </header>
-  <section class="post-content"><p>I had some hard time getting Tensorflow with GPU support and <a href="https://gym.openai.com/">OpenAI Gym</a> at the same time working on an AWS EC2 instance. For some time I used <a href="https://github.com/NVIDIA/nvidia-docker/">NVIDIA-Docker</a> for this but as much as I love Docker, depending on special access to the (NVIDIA) GPU drivers, took away some of the biggest advantages when using Docker, at least for my use cases. Running OpenAI Gym in a normal container, exposing some port to the outside and running agents/neural nets etc. elsewhere seems like a really promising approach and I’m looking forward to it being ready.</p>
+  <section class="post-content"><p>I had some hard time getting Tensorflow with GPU support and <a href="https://gym.openai.com/">OpenAI Gym</a> at the same time working on an AWS EC2 instance, and it seems like I’m in good <a href="https://github.com/openai/gym/issues/247">company</a>. For some time I used <a href="https://github.com/NVIDIA/nvidia-docker/">NVIDIA-Docker</a> for this but as much as I love Docker, depending on special access to the (NVIDIA) GPU drivers, took away some of the biggest advantages when using Docker, at least for my use cases. Running OpenAI Gym in a normal container, exposing some port to the outside and running agents/neural nets etc. elsewhere seems like a really promising approach and I’m looking forward to it being ready.</p>
 
 <p>There are good <a href="https://alliseesolutions.wordpress.com/2016/09/08/install-gpu-tensorflow-from-sources-w-ubuntu-16-04-and-cuda-8-0-rc/">explanations</a> on how to get Tensorflow with CUDA going, those were pretty helpful to me. However I suppose they were mostly concerned with supervised learning.
 If you want to run certain OpenAI Gym environments headless on a server, you have to provide an X-server to them, even when you don’t want to render a video. You can use a virtual framebuffer like xvfb for this, it works fine. But I never could getting it to work with GLX support. Also other solutions like X-Dummy failed.
