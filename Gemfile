@@ -1,6 +1,7 @@
 source "https://rubygems.org"
 gem 'jekyll', '3.1.6'
-gem "rake", "~> 10.1.1"
+gem "rake"
+gem 'rake-jekyll'
 gem 'rouge'
 gem 'jekyll-paginate'
 gem 'jekyll-seo-tag'
