@@ -5,7 +5,7 @@
     <atom:link href="https://davidsanwald.github.io/feed.xml" rel="self" type="application/rss+xml"/>
     <link>https://davidsanwald.github.io/</link>
     <description></description>
-    <pubDate>Fri, 16 Dec 2016 22:58:47 +0000</pubDate>
+    <pubDate>Fri, 30 Dec 2016 10:36:03 +0000</pubDate>
     
       <item>
         <title>Testing and Deploying With Travis CI and Some Other Blog Stuff</title>
@@ -52,7 +52,7 @@ In the end it took my a few hours till the first working build on Travis. Someho
       </item>
     
       <item>
-        <title>About Being a Good Lister</title>
+        <title>About Being a Good Listener</title>
         <link>https://davidsanwald.github.io/2016/12/15/listening.html</link>
         <guid isPermaLink="true">https://davidsanwald.github.io/2016/12/15/listening.html</guid>
         <description>&lt;!--more--&gt;
