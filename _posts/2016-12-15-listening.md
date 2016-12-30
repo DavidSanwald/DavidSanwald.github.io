@@ -1,6 +1,6 @@
 ---
 layout: post
-title: About Being a Good Lister
+title: About Being a Good Listener
 subtitle: Some Personal Thoughts on Something I Read Today
 ---
 
