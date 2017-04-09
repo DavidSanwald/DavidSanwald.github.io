@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Hello World <3
+title: Hello World!
 published: true
 ---
 ![Functional way of life!](/img/laziness.jpg)
