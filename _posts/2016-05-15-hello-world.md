@@ -1,6 +1,7 @@
 ---
 layout: post
-title: Hello World!
+title: Hello World <3
+published: true
 ---
 ![Functional way of life!](/img/laziness.jpg)
 I just couldn't resist beginning this small blog with the classic "Hello world!" and also some functional life advice:
