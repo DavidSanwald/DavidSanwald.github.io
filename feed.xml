@@ -5,7 +5,7 @@
     <atom:link href="https://davidsanwald.github.io/feed.xml" rel="self" type="application/rss+xml"/>
     <link>https://davidsanwald.github.io/</link>
     <description></description>
-    <pubDate>Sun, 09 Apr 2017 13:36:01 +0000</pubDate>
+    <pubDate>Sun, 09 Apr 2017 13:40:28 +0000</pubDate>
     
       <item>
         <title>Testing and Deploying With Travis CI and Some Other Blog Stuff</title>
@@ -737,7 +737,7 @@ But I guess this could take some time and maybe it will even cost me some bleedi
       </item>
     
       <item>
-        <title>Hello World &lt;3</title>
+        <title>Hello World!</title>
         <link>https://davidsanwald.github.io/2016/05/15/hello-world.html</link>
         <guid isPermaLink="true">https://davidsanwald.github.io/2016/05/15/hello-world.html</guid>
         <description>&lt;p&gt;&lt;img src=&quot;/img/laziness.jpg&quot; alt=&quot;Functional way of life!&quot; /&gt;
